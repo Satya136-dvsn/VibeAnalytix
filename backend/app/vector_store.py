@@ -8,10 +8,28 @@ Handles:
 from typing import Optional
 from uuid import UUID
 
-from sqlalchemy import select, text, cast
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import FunctionSummary
+
+
+def _format_vector_for_pgvector(embedding: list[float]) -> str:
+    """
+    Format a Python list as a pgvector array literal string.
+
+    pgvector expects vectors in the format '[0.1, 0.2, 0.3]'
+    We use string formatting to create this safely.
+
+    Args:
+        embedding: List of floats
+
+    Returns:
+        String representation of the vector for pgvector
+    """
+    # Format as pgvector array literal: '[0.1, 0.2, ...]'
+    formatted_values = ", ".join(str(x) for x in embedding)
+    return f"[{formatted_values}]"
 
 
 async def semantic_retrieval(
@@ -34,22 +52,23 @@ async def semantic_retrieval(
     Returns:
         List of FunctionSummary records ordered by similarity (most similar first)
     """
-    # Use pgvector's array literal syntax for the query
-    # Cast the query embedding array to vector type
-    query_vector = cast(query_embedding, "vector")
+    # Format the query embedding as a pgvector array literal string
+    query_vector_str = _format_vector_for_pgvector(query_embedding)
 
+    # Use raw SQL with pgvector's array literal syntax
+    # The vector literal '[...]' is passed directly in the ORDER BY clause
     result = await session.execute(
         text("""
             SELECT id, job_id, file_path, function_name, line_start, line_end,
                    summary_text, embedding
             FROM function_summaries
             WHERE job_id = :job_id AND embedding IS NOT NULL
-            ORDER BY embedding <=> cast(:query_embedding as vector)
+            ORDER BY embedding <=> :query_vector::vector
             LIMIT :top_k
         """),
         {
             "job_id": str(job_id),
-            "query_embedding": str(query_embedding),
+            "query_vector": query_vector_str,
             "top_k": top_k,
         },
     )

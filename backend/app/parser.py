@@ -417,17 +417,67 @@ async def parse_repository(temp_dir: Path) -> list[ParsedFile]:
 
 def pretty_print(ast: Node, language: str) -> str:
     """
-    Serialize AST back to normalized source code.
+    Serialize AST back to normalized source code via recursive reconstruction.
 
     Args:
         ast: Tree-sitter AST node
         language: Programming language
 
     Returns:
-        Pretty-printed source code string
+        Pretty-printed/normalized source code string
     """
-    # For simplicity, return the raw text
-    # In production, implement language-specific pretty printing
-    if hasattr(ast, "text"):
-        return ast.text.decode("utf-8")
-    return ""
+    def reconstruct_ast(node: Node, indent: int = 0) -> str:
+        """
+        Recursively reconstruct source code from AST node.
+        
+        Args:
+            node: Current AST node
+            indent: Current indentation level (for formatting)
+            
+        Returns:
+            Reconstructed source code for this subtree
+        """
+        if not node:
+            return ""
+        
+        # For leaf nodes, return the text directly
+        if not node.children:
+            text = node.text
+            if isinstance(text, bytes):
+                text = text.decode("utf-8")
+            return text
+        
+        # For parent nodes, reconstruct from children
+        reconstructed_parts = []
+        
+        for child in node.children:
+            child_text = reconstruct_ast(child, indent)
+            if child_text:
+                reconstructed_parts.append(child_text)
+        
+        # Join child parts, preserving whitespace semantics
+        result = "".join(reconstructed_parts)
+        
+        # Normalize multiple spaces/tabs (but preserve semantic newlines)
+        lines = result.split("\n")
+        normalized_lines = []
+        
+        for line in lines:
+            # Strip trailing whitespace, preserve leading indentation
+            stripped = line.rstrip()
+            normalized_lines.append(stripped)
+        
+        # Reconstruct with normalized lines, removing empty blank lines
+        final = "\n".join(normalized_lines).strip()
+        
+        return final
+    
+    # Start reconstruction from root
+    reconstructed = reconstruct_ast(ast)
+    
+    # Final normalization: ensure consistent line endings and spacing
+    # Remove excessive blank lines (more than 2 consecutive)
+    import re
+    normalized = re.sub(r"\n\n\n+", "\n\n", reconstructed)
+    
+    return normalized

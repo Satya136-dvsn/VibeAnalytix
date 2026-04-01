@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.database import init_db, close_db
+from app.redis_store import init_redis, close_redis
 from app.routers import auth, jobs
 from app.celery_app import celery_app
 
@@ -24,10 +25,18 @@ async def lifespan(app: FastAPI):
     print("Initializing database...")
     await init_db()
     print("Database initialized")
+    
+    print("Initializing Redis connection pool...")
+    await init_redis(settings.redis_url)
+    print("Redis pool initialized")
 
     yield
 
     # Shutdown
+    print("Closing Redis connections...")
+    await close_redis()
+    print("Redis connections closed")
+    
     print("Closing database connections...")
     await close_db()
     print("Application shutdown complete")

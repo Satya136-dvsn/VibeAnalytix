@@ -3,8 +3,10 @@ Jobs router for job submission, status tracking, and results retrieval.
 """
 
 import asyncio
+import json
 import tempfile
 from uuid import UUID
+from datetime import datetime, timedelta
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,6 +15,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File,
 from app.auth import get_current_user
 from app.database import get_session
 from app.models import User, Job, ProjectResult, FileSummary
+from app.redis_store import get_redis
 from app.schemas import (
     JobSubmissionResponse,
     JobStatusResponse,
@@ -24,6 +27,67 @@ from app.tasks import run_pipeline
 from app.celery_app import celery_app
 
 router = APIRouter(prefix="/api/v1/jobs", tags=["jobs"])
+
+
+async def check_idempotency_key(
+    idempotency_key: str,
+    user_id: UUID,
+    session: AsyncSession,
+) -> UUID | None:
+    """
+    Check if idempotency key exists and return existing job_id if found.
+    
+    Args:
+        idempotency_key: The idempotency key to check
+        user_id: User ID to namespace the key
+        session: Database session
+        
+    Returns:
+        Existing job_id if found and within 24 hours, None otherwise
+    """
+    if not idempotency_key:
+        return None
+    
+    redis_client = await get_redis()
+    
+    # Redis key: "idempotency:{user_id}:{key}"
+    cache_key = f"idempotency:{user_id}:{idempotency_key}"
+    
+    stored_value = await redis_client.get(cache_key)
+    if stored_value:
+        job_id_str = json.loads(stored_value)["job_id"]
+        # Verify job still exists
+        job = await session.get(Job, UUID(job_id_str))
+        if job:
+            return UUID(job_id_str)
+    
+    return None
+
+
+async def store_idempotency_key(
+    idempotency_key: str,
+    user_id: UUID,
+    job_id: UUID,
+) -> None:
+    """
+    Store idempotency key with job_id for 24 hours.
+    
+    Args:
+        idempotency_key: The idempotency key to store
+        user_id: User ID to namespace the key
+        job_id: Job ID to store
+    """
+    if not idempotency_key:
+        return
+    
+    redis_client = await get_redis()
+    
+    # Redis key: "idempotency:{user_id}:{key}"
+    cache_key = f"idempotency:{user_id}:{idempotency_key}"
+    
+    # Store with 24-hour TTL
+    value = json.dumps({"job_id": str(job_id)})
+    await redis_client.setex(cache_key, 86400, value)  # 86400 seconds = 24 hours
 
 
 def _is_valid_github_url(url: str) -> bool:
@@ -98,10 +162,14 @@ async def submit_job(
             detail="Rate limit exceeded: 10 jobs per hour",
         )
 
-    # Check idempotency
+    # Check idempotency — if key exists, return existing job
     if idempotency_key:
-        # In production, implement proper idempotency key tracking
-        pass
+        existing_job_id = await check_idempotency_key(idempotency_key, user.id, session)
+        if existing_job_id:
+            return JobSubmissionResponse(
+                job_id=existing_job_id,
+                status="queued",  # May have progressed, but we return queued for consistency
+            )
 
     # Process based on source type
     source_type: str
@@ -142,6 +210,10 @@ async def submit_job(
     session.add(job)
     await session.commit()
     await session.refresh(job)
+
+    # Store idempotency key for future duplicate detection
+    if idempotency_key:
+        await store_idempotency_key(idempotency_key, user.id, job.id)
 
     # Enqueue pipeline task
     run_pipeline.delay(str(job.id), source_type, source_ref)

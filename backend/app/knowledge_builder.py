@@ -6,15 +6,23 @@ Constructs:
 2. File-level summaries (aggregate of function summaries)
 3. Module-level summaries (per directory)
 4. Project-level summary (aggregate of all modules)
+
+All summaries are generated using OpenAI's gpt-3.5-turbo for cost-efficiency.
 """
 
+import asyncio
+import logging
 from dataclasses import dataclass, field
 from typing import Optional
 
+from openai import AsyncOpenAI, APIError, RateLimitError, APIConnectionError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.analysis import AnalysisResult
+from app.config import settings
 from app.parser import ParsedFile, FunctionDef
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -66,7 +74,11 @@ class KnowledgeGraph:
 
 
 class KnowledgeBuilder:
-    """Builds hierarchical knowledge graph from parsed code."""
+    """Builds hierarchical knowledge graph from parsed code using OpenAI API."""
+
+    MAX_RETRIES = 3
+    RETRY_DELAYS = [1, 2, 4]  # seconds
+    RETRYABLE_ERRORS = (APIError, RateLimitError, APIConnectionError)
 
     def __init__(self, parsed_files: list[ParsedFile], analysis: AnalysisResult):
         """
@@ -81,6 +93,73 @@ class KnowledgeBuilder:
         self.function_summaries: list[FunctionSummary] = []
         self.file_summaries: list[FileSummary] = []
         self.module_summaries: list[ModuleSummary] = []
+        self.client = AsyncOpenAI(api_key=settings.openai_api_key)
+
+    async def _generate_summary(
+        self, context: str, summary_type: str = "general"
+    ) -> str:
+        """
+        Generate a summary using OpenAI API with retry logic.
+
+        Args:
+            context: The content to summarize
+            summary_type: Type of summary (function/file/module/project)
+
+        Returns:
+            Summary text from OpenAI
+
+        Raises:
+            Exception: If all retries fail
+        """
+        prompts = {
+            "function": "Provide a brief, 1-2 sentence summary of this function's purpose and key logic:\n\n",
+            "file": "Provide a brief 2-3 sentence summary of this file's role in the project, based on its contained functions:\n\n",
+            "module": "Provide a brief 2-3 sentence summary of this module's (directory's) purpose and responsibilities:\n\n",
+            "project": "Provide a 3-4 sentence summary of this project's overall purpose, architecture, and key components:\n\n",
+        }
+
+        prompt = prompts.get(summary_type, prompts["general"]) + context
+
+        for attempt in range(self.MAX_RETRIES):
+            try:
+                response = await self.client.chat.completions.create(
+                    model="gpt-3.5-turbo",
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": "You are a code analysis expert. Provide concise, technical summaries of code elements.",
+                        },
+                        {"role": "user", "content": prompt},
+                    ],
+                    max_tokens=200,
+                    temperature=0.3,
+                )
+                return response.choices[0].message.content.strip()
+            except self.RETRYABLE_ERRORS as e:
+                if attempt < self.MAX_RETRIES - 1:
+                    delay = self.RETRY_DELAYS[attempt]
+                    logger.warning(
+                        f"OpenAI API error (attempt {attempt + 1}/{self.MAX_RETRIES}): {e}. "
+                        f"Retrying in {delay}s..."
+                    )
+                    await asyncio.sleep(delay)
+                else:
+                    logger.error(
+                        f"OpenAI API failed after {self.MAX_RETRIES} attempts: {e}. "
+                        f"Using fallback summary."
+                    )
+                    # Return fallback summary
+                    if len(context) > 100:
+                        return context[:100] + "..."
+                    return context
+            except Exception as e:
+                logger.error(f"Unexpected error generating summary: {e}")
+                # Return fallback summary
+                if len(context) > 100:
+                    return context[:100] + "..."
+                return context
+
+        return "Summary generation failed."
 
     def _chunk_function(
         self, func: FunctionDef, file_path: str, chunk_size: int = 200
@@ -129,35 +208,81 @@ class KnowledgeBuilder:
 
         return summaries
 
-    def build_function_summaries(self) -> list[FunctionSummary]:
+    async def build_function_summaries(self) -> list[FunctionSummary]:
         """
-        Build function-level summaries with chunking support.
+        Build function-level summaries with chunking support and OpenAI generation.
+        
+        Uses asyncio.gather with semaphore to parallelize OpenAI API calls.
 
         Returns:
-            List of FunctionSummary objects
+            List of FunctionSummary objects with AI-generated summaries
         """
         summaries = []
+        semaphore = asyncio.Semaphore(5)  # Limit concurrent API calls to 5
+        
+        async def generate_chunk_summary(chunk_summary: FunctionSummary, parsed_file: ParsedFile, source_code: str):
+            """Helper to generate summary for a single chunk."""
+            async with semaphore:
+                # Extract function source from the chunk
+                if source_code:
+                    lines = source_code.split('\n')
+                    chunk_start = min(chunk_summary.line_start - 1, len(lines) - 1)
+                    chunk_end = min(chunk_summary.line_end, len(lines))
+                    func_source = '\n'.join(lines[chunk_start:chunk_end])
+                else:
+                    func_source = chunk_summary.function_name
+                
+                # Generate summary using OpenAI
+                try:
+                    chunk_summary.summary_text = await self._generate_summary(
+                        func_source, summary_type="function"
+                    )
+                except Exception as e:
+                    logger.error(f"Failed to generate summary for {chunk_summary.function_name}: {e}")
+                    # Fallback: use function name
+                    chunk_summary.summary_text = f"Function: {chunk_summary.function_name}"
+                
+                return chunk_summary
 
+        # Collect all tasks
+        tasks = []
         for parsed_file in self.parsed_files:
             if not parsed_file.functions:
                 continue
 
+            # Get source code from AST if available
+            source_code = ""
+            if parsed_file.ast:
+                try:
+                    source_code = parsed_file.ast.text.decode('utf-8') if isinstance(parsed_file.ast.text, bytes) else parsed_file.ast.text
+                except Exception:
+                    pass
+
             for func in parsed_file.functions:
                 # Chunk function if needed
                 func_summaries = self._chunk_function(func, parsed_file.path)
-                summaries.extend(func_summaries)
-
+                
+                # Create tasks for each chunk
+                for chunk_summary in func_summaries:
+                    tasks.append(generate_chunk_summary(chunk_summary, parsed_file, source_code))
+        
+        # Execute all tasks concurrently
+        if tasks:
+            summaries = await asyncio.gather(*tasks)
+        
         return summaries
 
-    def build_file_summaries(self) -> list[FileSummary]:
+    async def build_file_summaries(self) -> list[FileSummary]:
         """
-        Build file-level summaries by aggregating function summaries.
+        Build file-level summaries by aggregating and summarizing function summaries.
+        
+        Uses asyncio.gather with semaphore to parallelize OpenAI API calls.
 
         Returns:
             List of FileSummary objects
         """
-        summaries = []
         file_function_map: dict[str, list[FunctionSummary]] = {}
+        semaphore = asyncio.Semaphore(5)  # Limit concurrent API calls to 5
 
         # Group function summaries by file
         for func_summary in self.function_summaries:
@@ -165,34 +290,51 @@ class KnowledgeBuilder:
                 file_function_map[func_summary.file_path] = []
             file_function_map[func_summary.file_path].append(func_summary)
 
-        # Create file summaries
-        for parsed_file in self.parsed_files:
-            file_summary = FileSummary(
-                file_path=parsed_file.path,
-                functions=file_function_map.get(parsed_file.path, []),
-            )
-            # Generate summary text from function summaries
-            if file_summary.functions:
-                func_names = ", ".join(
-                    f.function_name for f in file_summary.functions
+        async def generate_file_summary(parsed_file) -> FileSummary:
+            """Generate summary for a single file."""
+            async with semaphore:
+                file_summary = FileSummary(
+                    file_path=parsed_file.path,
+                    functions=file_function_map.get(parsed_file.path, []),
                 )
-                file_summary.summary_text = (
-                    f"File {parsed_file.path} containing functions: {func_names}"
-                )
+                
+                # Generate summary using OpenAI
+                if file_summary.functions:
+                    func_names = ", ".join(
+                        f.function_name for f in file_summary.functions
+                    )
+                    # Create context for OpenAI
+                    context = f"File: {parsed_file.path}\nLanguage: {parsed_file.language}\nFunctions: {func_names}\nFile content (first 500 chars):\n{parsed_file.source[:500]}"
+                    try:
+                        file_summary.summary_text = await self._generate_summary(
+                            context, summary_type="file"
+                        )
+                    except Exception as e:
+                        logger.error(f"Failed to generate summary for {parsed_file.path}: {e}")
+                        file_summary.summary_text = f"File {parsed_file.path} containing {len(file_summary.functions)} functions"
+                else:
+                    # No functions, just use file path
+                    file_summary.summary_text = f"File {parsed_file.path} with no public functions."
+                
+                return file_summary
 
-            summaries.append(file_summary)
-
+        # Generate summaries for all files concurrently
+        tasks = [generate_file_summary(pf) for pf in self.parsed_files]
+        summaries = await asyncio.gather(*tasks)
+        
         return summaries
 
-    def build_module_summaries(self) -> list[ModuleSummary]:
+    async def build_module_summaries(self) -> list[ModuleSummary]:
         """
-        Build module-level summaries by directory.
+        Build module-level summaries by directory with OpenAI generation.
+        
+        Uses asyncio.gather with semaphore to parallelize OpenAI API calls.
 
         Returns:
             List of ModuleSummary objects
         """
-        summaries = []
         module_file_map: dict[str, list[FileSummary]] = {}
+        semaphore = asyncio.Semaphore(5)  # Limit concurrent API calls to 5
 
         # Group files by directory (module)
         for file_summary in self.file_summaries:
@@ -204,21 +346,42 @@ class KnowledgeBuilder:
                 module_file_map[module_path] = []
             module_file_map[module_path].append(file_summary)
 
-        # Create module summaries
-        for module_path, files in sorted(module_file_map.items()):
-            file_names = ", ".join(f.file_path.split("/")[-1] for f in files)
-            module_summary = ModuleSummary(
-                module_path=module_path,
-                files=files,
-                summary_text=f"Module {module_path} containing files: {file_names}",
-            )
-            summaries.append(module_summary)
+        async def generate_module_summary(module_path: str, files: list[FileSummary]) -> ModuleSummary:
+            """Generate summary for a single module."""
+            async with semaphore:
+                file_names = ", ".join(f.file_path.split("/")[-1] for f in files)
+                file_summaries_text = "; ".join(
+                    f.summary_text or f.file_path for f in files
+                )
+                
+                # Create context for OpenAI
+                context = f"Module: {module_path}\nFiles ({len(files)}): {file_names}\n\nFile summaries:\n{file_summaries_text}"
+                try:
+                    summary_text = await self._generate_summary(
+                        context, summary_type="module"
+                    )
+                except Exception as e:
+                    logger.error(f"Failed to generate summary for module {module_path}: {e}")
+                    summary_text = f"Module {module_path} containing {len(files)} files"
+                
+                return ModuleSummary(
+                    module_path=module_path,
+                    files=files,
+                    summary_text=summary_text,
+                )
 
+        # Generate summaries for all modules concurrently
+        tasks = [
+            generate_module_summary(module_path, files)
+            for module_path, files in sorted(module_file_map.items())
+        ]
+        summaries = await asyncio.gather(*tasks)
+        
         return summaries
 
-    def build_project_summary(self) -> ProjectSummary:
+    async def build_project_summary(self) -> ProjectSummary:
         """
-        Build project-level summary.
+        Build project-level summary using OpenAI API.
 
         Returns:
             ProjectSummary object
@@ -230,33 +393,48 @@ class KnowledgeBuilder:
         entry_points = self.analysis.entry_points
         external_deps = self.analysis.external_deps
 
-        summary_parts = [
-            f"Project with {num_files} files",
-            f"containing {num_functions} functions",
-            f"in {', '.join(sorted(languages))}",
-            f"with entry points: {', '.join(entry_points) or 'None'}",
-            f"external dependencies: {', '.join(external_deps[:5]) or 'None'}",
-        ]
+        # Create context from module summaries
+        module_summaries_text = "\n\n".join(
+            f"Module {m.module_path}: {m.summary_text}"
+            for m in self.module_summaries
+        )
 
-        summary_text = ". ".join(summary_parts) + "."
+        # Create comprehensive context for project summary
+        context = f"""Project Statistics:
+- Files: {num_files}
+- Functions: {num_functions}
+- Languages: {', '.join(sorted(languages))}
+- Entry points: {', '.join(entry_points) or 'None'}
+- External dependencies: {', '.join(external_deps[:10]) or 'None'}
+
+Module Summaries:
+{module_summaries_text}"""
+
+        try:
+            summary_text = await self._generate_summary(
+                context, summary_type="project"
+            )
+        except Exception as e:
+            logger.error(f"Failed to generate project summary: {e}")
+            summary_text = f"Project with {num_files} files and {num_functions} functions in {', '.join(sorted(languages))}"
 
         return ProjectSummary(
             summary_text=summary_text,
             modules=self.module_summaries,
         )
 
-    def build(self) -> KnowledgeGraph:
+    async def build(self) -> KnowledgeGraph:
         """
-        Build complete knowledge graph.
+        Build complete knowledge graph asynchronously.
 
         Returns:
             Complete KnowledgeGraph
         """
         # Build in order (bottom-up)
-        self.function_summaries = self.build_function_summaries()
-        self.file_summaries = self.build_file_summaries()
-        self.module_summaries = self.build_module_summaries()
-        project_summary = self.build_project_summary()
+        self.function_summaries = await self.build_function_summaries()
+        self.file_summaries = await self.build_file_summaries()
+        self.module_summaries = await self.build_module_summaries()
+        project_summary = await self.build_project_summary()
 
         return KnowledgeGraph(
             function_summaries=self.function_summaries,
@@ -280,7 +458,7 @@ async def build_knowledge(
         Complete knowledge graph
     """
     builder = KnowledgeBuilder(parsed_files, analysis)
-    return builder.build()
+    return await builder.build()
 
 
 async def generate_and_store_embeddings(

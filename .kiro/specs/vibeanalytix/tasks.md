@@ -26,11 +26,12 @@ Implement VibeAnalytix as a FastAPI + Celery backend with a Next.js frontend. Th
     - _Requirements: 1.5_
 
 - [x] 2. Database schema and migrations
-  - [x] 2.1 Set up Alembic and create initial migration
+  - [ ] 2.1 Set up Alembic and create initial migration
     - Initialize Alembic in `backend/`
     - Create migration for all tables: `users`, `jobs`, `parsed_files`, `function_summaries`, `file_summaries`, `module_summaries`, `project_results`
     - Enable pgvector extension (`CREATE EXTENSION IF NOT EXISTS vector`)
     - Add ivfflat index on `function_summaries.embedding`
+    - **⚠️ BLOCKER**: No `alembic/` directory found; DB schema currently managed only via SQLAlchemy ORM models (not via Alembic migrations)
     - _Requirements: 7.2, 9.1_
 
   - [x] 2.2 Create SQLAlchemy ORM models
@@ -123,8 +124,9 @@ Implement VibeAnalytix as a FastAPI + Celery backend with a Next.js frontend. Th
     - Populate `ParsedFile.parse_error` for files that fail; do not abort the batch
     - _Requirements: 4.1, 4.2, 4.3_
 
-  - [x] 5.3 Implement Pretty_Printer for AST round-trip
+  - [ ] 5.3 Implement Pretty_Printer for AST round-trip
     - Implement `pretty_print(ast, language) -> str` that serializes a tree-sitter AST back to normalized source
+    - **⚠️ BLOCKER**: `parser.py:420–433` only returns raw text decode; needs full recursive AST reconstruction
     - _Requirements: 4.4, 4.5_
 
   - [x] 5.4 Write property test for language detection accuracy (Property 4)
@@ -173,9 +175,10 @@ Implement VibeAnalytix as a FastAPI + Celery backend with a Next.js frontend. Th
     - Catalog external library dependencies
     - _Requirements: 5.2, 5.3, 5.4_
 
-  - [x] 6.3 Implement Pass 3 — Context Refinement
+  - [ ] 6.3 Implement Pass 3 — Context Refinement
     - Pass 3: resolve cross-file semantic relationships; annotate functions with callers/callees across files
     - Enrich dependency graph with semantic edges
+    - **⚠️ BLOCKER**: `analysis.py:160–180` contains only stub comment; implementation missing
     - _Requirements: 5.5_
 
   - [x] 6.4 Write property test for dependency graph completeness (Property 9)
@@ -203,10 +206,11 @@ Implement VibeAnalytix as a FastAPI + Celery backend with a Next.js frontend. Th
 - [x] 7. Checkpoint — All tests implemented
 
 - [x] 8. Knowledge Builder
-  - [x] 8.1 Implement hierarchical summarization
+  - [ ] 8.1 Implement hierarchical summarization
     - Write `backend/app/knowledge_builder.py` with `build_knowledge(parsed_files, analysis) -> KnowledgeGraph`
     - Generate function-level summaries (chunk functions > 200 lines into ≤200-line segments)
     - Aggregate to file-level, module-level (per directory), and single project-level summaries
+    - **⚠️ CRITICAL**: `knowledge_builder.py:170–230` uses fake f-string mocks instead of OpenAI API calls
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5_
 
   - [x] 8.2 Implement embedding generation and pgvector storage
@@ -302,11 +306,12 @@ Implement VibeAnalytix as a FastAPI + Celery backend with a Next.js frontend. Th
     - File: `tests/unit/test_cleanup.py`
 
 - [x] 11. FastAPI REST API
-  - [x] 11.1 Implement job submission endpoint
+  - [ ] 11.1 Implement job submission endpoint
     - Write `backend/app/routers/jobs.py` with `POST /api/v1/jobs`
     - Accept GitHub URL or ZIP multipart upload; validate input; create job record; enqueue `run_pipeline` task
     - Return 202 `{ job_id }` within 2 seconds
     - Support optional `Idempotency-Key` header: return existing job if same key used within 24 hours
+    - **⚠️ BLOCKER**: `routers/jobs.py:102` Idempotency-Key is bare `pass`; needs Redis caching
     - _Requirements: 9.1, 9.2_
 
   - [x] 11.2 Implement job status and results endpoints

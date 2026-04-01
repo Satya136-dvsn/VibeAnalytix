@@ -150,14 +150,19 @@ class ExplanationEngine:
         self,
         job_id: str,
         session: AsyncSession,
+        knowledge: KnowledgeGraph,
         top_k: int = 10,
     ) -> list[dict]:
         """
         Retrieve top-k semantically similar function embeddings from pgvector.
 
+        Generates a query embedding from the project context (project summary,
+        key modules, entry points) and retrieves similar functions.
+
         Args:
             job_id: Job identifier
             session: Database session
+            knowledge: Knowledge graph with project summaries
             top_k: Number of results to retrieve
 
         Returns:
@@ -169,13 +174,43 @@ class ExplanationEngine:
         try:
             job_uuid = UUID(job_id)
 
-            # Generate a dummy query embedding for context retrieval
-            # In practice, we'd use a query-specific embedding, but for
-            # general context we retrieve the most "representative" functions
+            # Build a query string from the project context
+            # This will be embedded and used to find semantically similar functions
+            query_parts = []
+
+            # Add project summary
+            if knowledge.project_summary and knowledge.project_summary.summary_text:
+                query_parts.append(f"Project: {knowledge.project_summary.summary_text}")
+
+            # Add entry points and external dependencies from project summary
+            # The project_summary already contains this information
+
+            # Add top module summaries
+            if knowledge.module_summaries:
+                for mod in knowledge.module_summaries[:5]:
+                    if mod.summary_text:
+                        query_parts.append(f"Module {mod.module_path}: {mod.summary_text}")
+
+            # Add top file summaries
+            if knowledge.file_summaries:
+                for f in knowledge.file_summaries[:10]:
+                    if f.summary_text:
+                        query_parts.append(f"File {f.file_path}: {f.summary_text}")
+
+            query_text = " ".join(query_parts) if query_parts else "code analysis"
+
+            # Generate a real query embedding from the project context
+            response = await self.client.embeddings.create(
+                model="text-embedding-3-small",
+                input=query_text[:8000],  # Truncate to stay within token limits
+            )
+            query_embedding = response.data[0].embedding
+
+            # Use the real embedding for semantic retrieval
             all_summaries = await semantic_retrieval(
                 session=session,
                 job_id=job_uuid,
-                query_embedding=[0.0] * 1536,  # Dummy - would be replaced by actual query
+                query_embedding=query_embedding,
                 top_k=top_k,
             )
 
@@ -430,7 +465,7 @@ class ExplanationEngine:
         logger.info(f"Generating explanations for job {job_id}")
 
         # First: retrieve semantically similar functions from pgvector
-        similar_functions = await self._retrieve_similar_context(job_id, session, top_k=10)
+        similar_functions = await self._retrieve_similar_context(job_id, session, knowledge, top_k=10)
         logger.info(f"Retrieved {len(similar_functions)} semantically similar functions")
 
         # Build context with semantic retrieval
