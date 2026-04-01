@@ -50,8 +50,12 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
 async def init_db() -> None:
     """Initialize database tables. Should be called at startup."""
     from app.models import Base
+    from sqlalchemy import text
 
     async with engine.begin() as conn:
+        # Enable pgvector extension
+        await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector;"))
+        # Create all tables
         await conn.run_sync(Base.metadata.create_all)
 
 

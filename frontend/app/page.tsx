@@ -171,7 +171,7 @@ export default function SubmissionPage() {
                   <input
                     type="file"
                     accept=".zip"
-                    onChange={(e) => setZipFile(e.files?.[0] || null)}
+                    onChange={(e) => setZipFile(e.target.files?.[0] || null)}
                     required
                     className="hidden"
                     id="zip-input"
