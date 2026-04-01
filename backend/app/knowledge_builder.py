@@ -291,14 +291,87 @@ async def generate_and_store_embeddings(
     """
     Generate embeddings for function summaries and store in pgvector.
 
+    Uses OpenAI text-embedding-3-small model.
+    Retries up to 3 times with exponential backoff (1s, 2s, 4s) on API errors.
+    Skips individual functions after 3 failed retries.
+    Marks job failed if >50% of functions fail embedding.
+
     Args:
         job_id: Job identifier
         knowledge: Knowledge graph with summaries
         session: Database session
-
-    Note:
-        Placeholder implementation. Will integrate with OpenAI API.
     """
-    # TODO: Implement OpenAI embedding generation
-    # For now, this is a placeholder
-    pass
+    import asyncio
+    import logging
+    from openai import AsyncOpenAI, APIError, RateLimitError, APIConnectionError
+    from app.config import settings
+
+    logger = logging.getLogger(__name__)
+    client = AsyncOpenAI(api_key=settings.openai_api_key)
+    retry_delays = [1, 2, 4]
+    max_retries = 3
+    retryable_errors = (APIError, RateLimitError, APIConnectionError)
+
+    total_functions = len(knowledge.function_summaries)
+    if total_functions == 0:
+        return
+
+    failed_count = 0
+
+    # Generate embeddings and store directly
+    for func_summary in knowledge.function_summaries:
+        text = func_summary.summary_text or func_summary.function_name
+        embedding = None
+
+        for attempt in range(max_retries):
+            try:
+                response = await client.embeddings.create(
+                    model="text-embedding-3-small",
+                    input=text,
+                )
+                embedding = response.data[0].embedding
+                break
+            except retryable_errors as e:
+                if attempt < max_retries - 1:
+                    delay = retry_delays[attempt]
+                    logger.warning(
+                        f"Embedding error for {func_summary.function_name} "
+                        f"(attempt {attempt + 1}/{max_retries}): {e}. "
+                        f"Retrying in {delay}s..."
+                    )
+                    await asyncio.sleep(delay)
+                else:
+                    logger.error(
+                        f"Embedding failed for {func_summary.function_name} "
+                        f"after {max_retries} attempts: {e}"
+                    )
+                    failed_count += 1
+            except Exception as e:
+                logger.error(
+                    f"Non-retryable embedding error for {func_summary.function_name}: {e}"
+                )
+                failed_count += 1
+                break
+
+        # Create record with embedding directly (pgvector handles it)
+        from app.models import FunctionSummary as FunctionSummaryModel
+
+        db_record = FunctionSummaryModel(
+            job_id=job_id,
+            file_path=func_summary.file_path,
+            function_name=func_summary.function_name,
+            line_start=func_summary.line_start,
+            line_end=func_summary.line_end,
+            summary_text=text,
+            embedding=embedding,  # Pass list directly - pgvector handles serialization
+        )
+        session.add(db_record)
+
+    await session.commit()
+
+    # Check failure threshold
+    if total_functions > 0 and (failed_count / total_functions) > 0.5:
+        raise RuntimeError(
+            f"Embedding generation failed for {failed_count}/{total_functions} "
+            f"functions (>{50}% threshold). Job marked as failed."
+        )

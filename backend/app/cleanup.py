@@ -9,6 +9,7 @@ from typing import Optional
 
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
+from uuid import UUID
 
 from app.config import settings
 from app.models import Job
@@ -159,7 +160,7 @@ async def update_job_progress(
     try:
         stmt = (
             update(Job)
-            .where(Job.id == job_id)
+            .where(Job.id == UUID(job_id))
             .values(
                 current_stage=stage,
                 progress_pct=progress_pct,
@@ -189,7 +190,7 @@ async def mark_job_failed(
     try:
         stmt = (
             update(Job)
-            .where(Job.id == job_id)
+            .where(Job.id == UUID(job_id))
             .values(
                 status="failed",
                 error_message=error_message,

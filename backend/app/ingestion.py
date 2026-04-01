@@ -177,13 +177,25 @@ def check_path_traversal(path: str) -> bool:
     """
     Check if a path contains traversal sequences.
 
+    Handles both Unix-style (../) and Windows-style (..\\) sequences,
+    as well as absolute paths.
+
     Args:
         path: Path to check
 
     Returns:
-        True if path contains traversal sequences
+        True if path contains traversal sequences or is absolute
     """
-    return ".." in path or os.path.isabs(path)
+    # Normalize to forward slashes for consistent checking
+    normalized = path.replace("\\", "/")
+    if ".." in normalized:
+        return True
+    if os.path.isabs(path):
+        return True
+    # Also check for Windows drive letters (e.g., C:/, D:\\)
+    if len(path) >= 2 and path[1] == ":":
+        return True
+    return False
 
 
 def extract_zip_file(file_bytes: bytes, temp_dir: Path) -> None:
@@ -212,33 +224,45 @@ def extract_zip_file(file_bytes: bytes, temp_dir: Path) -> None:
         )
 
     try:
-        # Open ZIP and validate contents
-        with zipfile.ZipFile(file_bytes if isinstance(file_bytes, str) else __import__("io").BytesIO(file_bytes)) as zf:
-            # Check for path traversal and executables
+        # Open ZIP - do a single pass through entries
+        with zipfile.ZipFile(__import__("io").BytesIO(file_bytes)) as zf:
+            # Single pass: validate and extract simultaneously
             for info in zf.infolist():
+                # Normalize filename to forward slashes
+                normalized_name = info.filename.replace("\\", "/")
+
                 # Check for path traversal
-                if check_path_traversal(info.filename):
+                if check_path_traversal(normalized_name):
                     raise InvalidPathError(
                         f"ZIP contains path traversal sequence: {info.filename}"
                     )
 
                 # Check for executable binaries
-                if any(info.filename.lower().endswith(ext) for ext in EXECUTABLE_EXTENSIONS):
+                if any(normalized_name.lower().endswith(ext) for ext in EXECUTABLE_EXTENSIONS):
                     raise ExecutableBinaryError(
                         f"ZIP contains executable file: {info.filename}"
                     )
 
-            # Extract safely
-            for info in zf.infolist():
-                # Sanitize path
-                safe_path = Path(info.filename)
-                if safe_path.is_absolute():
-                    safe_path = safe_path.relative_to(safe_path.drive or "/")
+                # Sanitize path - remove leading slashes, resolve ..
+                safe_path = normalized_name.lstrip("/")
+                # Split and resolve any .. components
+                parts = safe_path.split("/")
+                resolved_parts = []
+                for part in parts:
+                    if part == "..":
+                        if resolved_parts:
+                            resolved_parts.pop()
+                        # else: .. at start stays at start (safe)
+                    elif part and part != ".":
+                        resolved_parts.append(part)
+                safe_path = "/".join(resolved_parts) if resolved_parts else "."
 
                 target_path = (temp_dir / safe_path).resolve()
 
                 # Verify extraction target is within temp_dir
-                if not str(target_path).startswith(str(temp_dir.resolve())):
+                temp_resolved = str(temp_dir.resolve())
+                target_str = str(target_path)
+                if not target_str.startswith(temp_resolved + "/") and target_str != temp_resolved:
                     raise InvalidPathError(
                         f"Attempted to extract outside temp directory: {info.filename}"
                     )

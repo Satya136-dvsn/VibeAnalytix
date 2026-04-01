@@ -3,7 +3,7 @@ SQLAlchemy ORM models for all database tables.
 """
 
 from datetime import datetime
-from typing import Optional
+from typing import Literal, Optional
 from uuid import UUID, uuid4
 
 from sqlalchemy import (
@@ -13,8 +13,6 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
-    LargeBinary,
-    Literal,
     String,
     Text,
     TIMESTAMP,
@@ -22,6 +20,19 @@ from sqlalchemy import (
     func,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID as PG_UUID
+
+# pgvector Vector type - loaded lazily to avoid hard dependency
+try:
+    from pgvector.sqlalchemy import Vector
+    HAS_PGVECTOR = True
+except ImportError:
+    from sqlalchemy.types import UserDefinedType
+    class Vector(UserDefinedType):  # type: ignore
+        def __init__(self, size, *args, **kwargs):
+            self.size = size
+        def get_col_spec(self, **kw):
+            return f"VECTOR({self.size})"
+    HAS_PGVECTOR = False
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
@@ -108,13 +119,15 @@ class FunctionSummary(Base):
     line_start: Optional[int] = Column(Integer, nullable=True)
     line_end: Optional[int] = Column(Integer, nullable=True)
     summary_text: Optional[str] = Column(Text, nullable=True)
-    embedding: Optional[LargeBinary] = Column(LargeBinary, nullable=True)  # pgvector
+    embedding = Column(Vector(1536), nullable=True)  # type: ignore # pgvector VECTOR type for semantic search
 
-    # Index for vector similarity search
+    # Index for vector similarity search using IVFFlat
     __table_args__ = (
         Index(
-            "idx_function_summaries_job_id",
-            "job_id",
+            "idx_function_summaries_embedding",
+            "embedding",
+            postgresql_using="ivfflat",
+            postgresql_ops={"embedding": "vector_cosine_ops"},
         ),
     )
 
@@ -170,6 +183,7 @@ class ProjectResult(Base):
     circular_deps: Optional[JSONB] = Column(JSONB, nullable=True)
     external_deps: Optional[JSONB] = Column(JSONB, nullable=True)
     file_tree: Optional[JSONB] = Column(JSONB, nullable=True)
+    per_file_explanations: Optional[JSONB] = Column(JSONB, nullable=True)
 
     # Relationships
     job = relationship("Job", back_populates="project_results")

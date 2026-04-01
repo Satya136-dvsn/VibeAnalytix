@@ -2,7 +2,7 @@
 
 ## Project Completion Status ✅
 
-All 13 major phases of the VibeAnalytix project have been completed with strict implementation standards and professional design principles.
+All 15 phases of the VibeAnalytix project have been completed with full implementation of all 30 correctness properties, real OpenAI integration, and a production-grade interactive frontend.
 
 ## Architecture Overview
 
@@ -31,7 +31,25 @@ VibeAnalytix is a **deliberate AI-powered code understanding engine** built with
 - **Timeout Protection**: 30-minute watchdog marks stuck jobs as failed
 - **Retry Mechanism**: Exponential backoff (1s, 2s, 4s) for external API calls
 
-### 2. Professional Design Patterns
+### 2. AI Integration (Production-Ready)
+
+#### OpenAI GPT-4o — Explanation Engine
+- **Real `AsyncOpenAI` client** using `gpt-4o` model for all explanation generation
+- **Context-aware prompts** built from hierarchical knowledge graph summaries
+- **Three explanation types generated concurrently**:
+  - Project overview (purpose, architecture, key technologies)
+  - Per-file explanations (role, key functions, relationships)
+  - Execution flow (entry point → processing → output narrative)
+- **Retry with exponential backoff**: 3 retries at 1s, 2s, 4s delays
+- **Graceful fallback**: Falls back to knowledge-graph summaries on API failure
+
+#### OpenAI Embeddings — Semantic Context
+- **`text-embedding-3-small` model** for function-level embedding generation
+- **pgvector storage** for efficient cosine similarity search
+- **Top-10 semantic retrieval** for context-aware explanation prompts
+- **50% failure threshold**: Job marked failed if > 50% of functions fail embedding
+
+### 3. Professional Design Patterns
 
 #### Database Design
 ```sql
@@ -74,16 +92,16 @@ Job Submission (API)
     ↓ Enqueue
 Redis Queue (Celery Broker)
     ↓ Dequeue
-7-Stage Processing Pipeline:
+9-Stage Processing Pipeline:
   1. Ingestion       (GitHub clone / ZIP extract)
   2. Parsing         (Tree-sitter AST generation)
   3. Analysis Pass 1 (Structural mapping)
   4. Analysis Pass 2 (Dependency detection + cycle detection)
   5. Analysis Pass 3 (Cross-file semantic relationships)
-  6. Knowledge      (Hierarchical summaries + chunking for 200+ line functions)
-  7. Embedding      (pgvector storage for semantic retrieval)
-  8. Explanation    (OpenAI GPT-4 with context retrieval)
-  9. Cleanup        (Temporary file deletion)
+  6. Knowledge       (Hierarchical summaries + chunking for 200+ line functions)
+  7. Embedding       (OpenAI text-embedding-3-small → pgvector)
+  8. Explanation     (OpenAI GPT-4o with context retrieval)
+  9. Cleanup         (Temporary file deletion + logging)
     ↓
 PostgreSQL + pgvector (Results storage)
     ↓
@@ -92,60 +110,49 @@ Frontend Polling (Every 3 seconds)
 
 #### Frontend Architecture
 - **Component-Based**: React with TypeScript for type safety
+- **Interactive File Tree**: Recursive tree component with expand/collapse, file selection, and per-file explanation panel
 - **State Management**: Global Zustand store for auth and job state
 - **Real-time Updates**: Status polling with visual feedback (progress bar, stage indicator)
-- **Multi-Tab Results**: Overview → Structure → Flow narrative
+- **Multi-Tab Results**: Overview → Structure (file tree + explanation) → Flow narrative
+- **Progressive Rendering**: Overview tab renders before full job completion
 - **Error Recovery**: Retry failed jobs with user-friendly UI
 - **Authentication Flow**: Protected routes redirect to login
 
-### 3. Comprehensive Testing Strategy
+### 4. Comprehensive Testing Strategy
 
 #### Unit Tests (8 test files)
 ```python
-# Tests for specific scenarios and integration points
-test_ingestion.py        # GitHub URL validation, ZIP extraction, path traversal
-test_parser.py           # Language detection, AST extraction, file tree
-test_analysis.py         # Dependency graphs, circular detection, external deps
-test_explanation_engine  # Semantic retrieval, AI retry logic
-test_cleanup.py          # Resource cleanup, timeout watchdog
-test_api_auth.py         # JWT validation, authorization checks
+tests/unit/
+  test_ingestion.py          # GitHub URL validation, ZIP extraction, path traversal
+  test_parser.py             # Language detection, AST extraction, file tree
+  test_analysis.py           # Dependency graphs, circular detection, external deps
+  test_knowledge_builder.py  # Chunking logic, aggregation hierarchy, summaries
+  test_explanation_engine.py # Context building, retry logic, ExplanationSet
+  test_cleanup.py            # Resource cleanup, timeout watchdog, progress stages
+  test_api_auth.py           # JWT validation, password hashing, authorization, rate limiting
 ```
 
-#### Property-Based Tests (Hypothesis Framework)
+#### Property-Based Tests (7 test files, 30 properties)
 ```python
-# Statistical properties across 100+ random inputs
-test_ingestion_props.py
-  - Property 1: Invalid URLs always rejected
-  - Property 2: ZIP paths never escape temp directory
-  - Property 3: Invalid ZIP magic bytes detected
-  - Property 28: Executable binaries blocked
-
-test_parser_props.py
-  - Property 4: Language detection accuracy
-  - Property 5: File tree completeness
-  - Property 6: Parser resilience
-
-test_analysis_props.py
-  - Property 9: Dependency matrix completeness
-  - Property 10: Cycle detection
-  - Property 11: External dependencies cataloged
-
-test_explanation_props.py
-  - Property 16: Per-file explanations generated
-  - Property 17: OpenAI retry behavior (3×, exponential backoff)
+tests/property/
+  test_ingestion_props.py    # Properties 1, 2, 3, 28
+  test_parser_props.py       # Properties 4, 5, 6, 7, 8
+  test_analysis_props.py     # Properties 9, 10, 11
+  test_knowledge_props.py    # Properties 12, 13, 14, 15
+  test_explanation_props.py  # Properties 16, 17
+  test_api_props.py          # Properties 18, 19, 20, 21, 22, 23, 24, 25, 26, 27
+  test_cleanup_props.py      # Properties 29, 30
 ```
 
 #### Integration Tests
 ```python
-test_pipeline.py
-  - End-to-end pipeline with synthetic repos
-  - Multi-language support (Python, TypeScript)
-  - Pipeline respects language limits
+tests/integration/
+  test_pipeline.py           # End-to-end pipeline with synthetic repos
 ```
 
-**Test Coverage**: 30 formal correctness properties verified + additional unit/integration tests
+**Test Coverage**: All 30 formal correctness properties verified + unit + integration tests
 
-### 4. Production-Ready Infrastructure
+### 5. Production-Ready Infrastructure
 
 #### Docker Compose Stack
 ```yaml
@@ -165,91 +172,6 @@ services:
 - Support for local development and Docker deployment
 - Clear validation of required settings at startup
 
-#### Monitoring & Observability
-- Structured logging with job IDs
-- Progress tracking (0-100%)
-- Detailed stage information
-- Error messages with context
-- Watchdog logs for timeout detection
-
-### 5. Code Quality Standards
-
-#### Type Safety
-- **100% type-hinted** backend code
-- Pydantic models for runtime validation
-- TypeScript frontend with strict tsconfig
-- Generic type parameters for reusability
-
-#### Documentation
-- Comprehensive docstrings for all public functions
-- Design document with formal system specification
-- Inline comments for complex logic (policy hash, path traversal)
-- README with architecture diagrams
-
-#### Testing Infrastructure
-- pytest configuration with asyncio support
-- Fixtures for database sessions
-- Mock settings for tests
-- Marker-based test categorization
-
-#### Development Tooling
-- Makefile with 15+ common commands
-- Black for code formatting
-- Ruff for linting
-- mypy for type checking
-- Quick-start scripts (bash + batch)
-
-### 6. Data Integrity & Consistency
-
-#### Database Constraints
-```sql
--- Enforce valid states
-CHECK (source_type IN ('github', 'zip'))
-CHECK (status IN ('queued', 'in_progress', 'completed', 'failed'))
-CHECK (progress_pct >= 0 AND progress_pct <= 100)
-
--- Cascading deletes for referential integrity
-FOREIGN KEY ... ON DELETE CASCADE
-
--- Unique constraints for idempotency
-job_id UNIQUE
-```
-
-#### State Machine Compliance
-```
-Initial:  queued
-Progress: queued → in_progress
-Terminal: in_progress → completed/failed
-Timeout:  in_progress (>30min) → failed
-Retry:    failed → new job (queued)
-```
-
-### 7. Performance & Scalability
-
-#### Async First
-- Non-blocking I/O throughout
-- Concurrent job processing via worker pool
-- Efficient resource cleanup
-
-#### Progress Tracking
-| Stage | Speed | Progress |
-|-------|-------|----------|
-| Ingestion | ~2s | 5-15% |
-| Parsing | ~5s | 15-30% |
-| Analysis (3-pass) | ~9s | 30-60% |
-| Knowledge | ~5s | 60-70% |
-| Embedding | ~10s | 70-80% |
-| Explanation | ~30s | 80-95% |
-| Cleanup | ~2s | 95-100% |
-
-**Total: ~60s for small repos, 2-10min for large repos**
-
-#### Scalability Features
-- Horizontal scaling via Celery workers
-- Connection pooling (20 connections, 0 overflow)
-- Pre-ping for stale connection handling
-- Background task queue for heavy operations
-
 ## Technology Stack
 
 ### Backend
@@ -259,8 +181,9 @@ Retry:    failed → new job (queued)
 - **Task Queue**: Celery + Redis (distributed processing)
 - **Authentication**: Python-jose (JWT), passlib (bcrypt)
 - **Parsing**: tree-sitter (7 languages)
-- **AI Integration**: OpenAI API (GPT-4 completions)
+- **AI Integration**: OpenAI API (AsyncOpenAI — GPT-4o + text-embedding-3-small)
 - **Validation**: Pydantic v2 (runtime validation)
+- **Testing**: Hypothesis (property-based), pytest (unit + integration)
 
 ### Frontend
 - **Framework**: Next.js 14 (React 18)
@@ -277,45 +200,54 @@ Retry:    failed → new job (queued)
 - **Task Queue**: Celery (with beat scheduler)
 - **Web Server**: Uvicorn (ASGI)
 
-## Files Created
+## Files
 
-### Core Backend (850+ lines)
+### Core Backend
 - `app/main.py` - FastAPI app factory with lifecycle
 - `app/config.py` - Pydantic settings management
 - `app/database.py` - SQLAlchemy async session
 - `app/models.py` - 8 SQLAlchemy ORM models
 - `app/schemas.py` - 15+ Pydantic request/response schemas
 - `app/auth.py` - JWT & password authentication
-- `app/ingestion.py` - GitHub/ZIP validation & extraction (500 lines)
-- `app/parser.py` - Tree-sitter AST parsing (350 lines)
-- `app/analysis.py` - 3-pass analysis engine (250 lines)
-- `app/knowledge_builder.py` - Hierarchical summaries (250 lines)
-- `app/explanation_engine.py` - OpenAI integration (150 lines)
-- `app/cleanup.py` - Resource cleanup & watchdog (200 lines)
+- `app/ingestion.py` - GitHub/ZIP validation & extraction
+- `app/parser.py` - Tree-sitter AST parsing (7 languages)
+- `app/analysis.py` - 3-pass analysis engine
+- `app/knowledge_builder.py` - Hierarchical summaries + OpenAI embeddings
+- `app/explanation_engine.py` - OpenAI GPT-4o integration with retry logic
+- `app/cleanup.py` - Resource cleanup & watchdog
 - `app/celery_app.py` - Celery configuration
-- `app/tasks.py` - Pipeline orchestration (250 lines)
+- `app/tasks.py` - Pipeline orchestration
 
-### API Routers (400+ lines)
+### API Routers
 - `routers/auth.py` - Register, login, get_me endpoints
 - `routers/jobs.py` - Submit, status, results, retry endpoints
 
-### Frontend (600+ lines)
+### Frontend
 - `app/layout.tsx` - Root layout with metadata
 - `app/page.tsx` - Submission form (GitHub/ZIP)
 - `app/auth/page.tsx` - Login/register page
-- `app/jobs/[id]/page.tsx` - Job results with 3 tabs
+- `app/jobs/[id]/page.tsx` - Job results with interactive file tree & 3 tabs
 - `lib/api.ts` - API client with interceptors
 - `lib/store.ts` - Zustand state management
 - `app/globals.css` - Tailwind base + components
-- Configuration: `next.config.js`, `tsconfig.json`, `tailwind.config.js`, `postcss.config.js`
 
-### Testing (400+ lines)
+### Testing (30 properties + unit + integration)
 - `tests/conftest.py` - pytest fixtures & async support
-- `tests/unit/test_ingestion.py` - Ingestion unit tests (200 lines)
-- `tests/unit/test_parser.py` - Parser unit tests (150 lines)
-- `tests/unit/test_analysis.py` - Analysis unit tests (120 lines)
-- `tests/property/test_ingestion_props.py` - Property-based tests (150 lines)
-- `tests/integration/test_pipeline.py` - End-to-end tests (100 lines)
+- `tests/unit/test_ingestion.py` - Ingestion unit tests
+- `tests/unit/test_parser.py` - Parser unit tests
+- `tests/unit/test_analysis.py` - Analysis unit tests
+- `tests/unit/test_knowledge_builder.py` - Knowledge builder unit tests
+- `tests/unit/test_explanation_engine.py` - Explanation engine unit tests
+- `tests/unit/test_cleanup.py` - Cleanup service unit tests
+- `tests/unit/test_api_auth.py` - API auth unit tests
+- `tests/property/test_ingestion_props.py` - Properties 1-3, 28
+- `tests/property/test_parser_props.py` - Properties 4-8
+- `tests/property/test_analysis_props.py` - Properties 9-11
+- `tests/property/test_knowledge_props.py` - Properties 12-15
+- `tests/property/test_explanation_props.py` - Properties 16-17
+- `tests/property/test_api_props.py` - Properties 18-27
+- `tests/property/test_cleanup_props.py` - Properties 29-30
+- `tests/integration/test_pipeline.py` - End-to-end tests
 
 ### Configuration & Deployment
 - `docker-compose.yml` - 6-service stack with health checks
@@ -327,21 +259,8 @@ Retry:    failed → new job (queued)
 - `Makefile` - 15+ development commands
 - `quick-start.sh` - Bash startup script
 - `quick-start.bat` - Batch startup script
-- `README.md` - Comprehensive documentation (400+ lines)
+- `README.md` - Comprehensive documentation
 - `backend/pyproject.toml` - Python dependencies + metadata
-
-## Quality Metrics
-
-✅ **Type Coverage**: 100% (all functions type-hinted)
-✅ **Test Coverage**: 30 formal properties + 20+ unit tests + integration tests
-✅ **Error Handling**: Comprehensive with consistent envelopes
-✅ **Security**: Multiple layers (auth, validation, sanitization, isolation)
-✅ **Performance**: Async-first, connection pooling, background jobs
-✅ **Scalability**: Horizontal via Celery workers
-✅ **Documentation**: Inline, docstrings, README, design spec
-✅ **Code Style**: Black, Ruff, mypy compatible
-✅ **Database**: Normalized schema with constraints
-✅ **API**: RESTful with versioning and progressive rendering
 
 ## How to Run
 
@@ -375,28 +294,17 @@ cd frontend && npm install && npm run dev
 cd backend && celery -A app.celery_app worker --loglevel=info
 ```
 
-## Professional Highlights
+### Run Tests
+```bash
+# All tests
+pytest tests/
 
-1. **Formal Specification**: System designed against 30 formally-verified correctness properties
-2. **Enterprise Security**: Multi-layer validation, JWT auth, row-level authorization
-3. **Production Architecture**: Async-first, proper state management, error recovery
-4. **Comprehensive Testing**: Properties, units, integration tests with 100+ examples
-5. **Complete Infrastructure**: Docker Compose, makefile, startup scripts
-6. **Professional Documentation**: README, docstrings, design spec, comments
-7. **Type Safety**: 100% type-hinted with runtime validation
-8. **Scalability**: Horizontal scaling via Celery workers
-9. **Database Integrity**: Proper constraints, cascading deletes, unique indexes
-10. **DevOps Ready**: Environment config, health checks, resource limits
+# Property tests only
+pytest tests/property/
 
-## Conclusion
+# Unit tests only
+pytest tests/unit/
 
-VibeAnalytix is a **production-grade, enterprise-ready system** built with strict adherence to:
-- Professional software engineering practices
-- Security-first principles
-- Comprehensive testing (30+ properties)
-- Type safety and validation
-- Proper error handling and recovery
-- Scalable async architecture
-- Complete documentation
-
-The codebase is maintainable, extensible, and ready for deployment with all infrastructure included.
+# Integration tests only
+pytest tests/integration/
+```

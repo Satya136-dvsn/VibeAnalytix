@@ -111,3 +111,55 @@ class TestZIPIntegrityProperties:
 
             # Should not raise
             validate_zip_magic_bytes(content)
+
+
+class TestExecutableBinaryRejection:
+    """Property-based tests for executable binary rejection (Property 28)."""
+
+    # Feature: vibeanalytix, Property 28: Executable Binary Rejection
+    @given(
+        ext=st.sampled_from([".exe", ".dll", ".so", ".bin"]),
+        filename=st.text(
+            alphabet="abcdefghijklmnopqrstuvwxyz0123456789_",
+            min_size=1,
+            max_size=15,
+        ),
+    )
+    @settings(max_examples=100)
+    def test_executable_extensions_rejected(self, ext, filename):
+        """ZIP archives containing executable files should be rejected."""
+        from app.ingestion import extract_zip_file, ExecutableBinaryError
+
+        buf = BytesIO()
+        with zipfile.ZipFile(buf, "w") as zf:
+            zf.writestr(f"{filename}{ext}", b"MZ\x90\x00")
+
+        zip_bytes = buf.getvalue()
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with pytest.raises(ExecutableBinaryError):
+                extract_zip_file(zip_bytes, Path(tmpdir))
+
+    # Feature: vibeanalytix, Property 28: Executable Binary Rejection (safe files pass)
+    @given(
+        ext=st.sampled_from([".py", ".js", ".ts", ".java", ".go", ".c", ".txt", ".md"]),
+        filename=st.text(
+            alphabet="abcdefghijklmnopqrstuvwxyz0123456789_",
+            min_size=1,
+            max_size=15,
+        ),
+    )
+    @settings(max_examples=100)
+    def test_non_executable_extensions_accepted(self, ext, filename):
+        """ZIP archives with non-executable files should be accepted."""
+        from app.ingestion import extract_zip_file
+
+        buf = BytesIO()
+        with zipfile.ZipFile(buf, "w") as zf:
+            zf.writestr(f"{filename}{ext}", "print('hello')")
+
+        zip_bytes = buf.getvalue()
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Should not raise
+            extract_zip_file(zip_bytes, Path(tmpdir))

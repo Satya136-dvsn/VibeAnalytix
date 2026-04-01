@@ -3,6 +3,7 @@ Jobs router for job submission, status tracking, and results retrieval.
 """
 
 import asyncio
+import tempfile
 from uuid import UUID
 
 from sqlalchemy import select
@@ -11,7 +12,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File,
 
 from app.auth import get_current_user
 from app.database import get_session
-from app.models import User, Job, ProjectResult
+from app.models import User, Job, ProjectResult, FileSummary
 from app.schemas import (
     JobSubmissionResponse,
     JobStatusResponse,
@@ -103,6 +104,9 @@ async def submit_job(
         pass
 
     # Process based on source type
+    source_type: str
+    source_ref: str
+
     if github_url:
         if not _is_valid_github_url(github_url):
             raise HTTPException(
@@ -120,8 +124,12 @@ async def submit_job(
                 detail="File must have .zip extension",
             )
 
+        # Read uploaded file bytes
+        file_bytes = await zip_file.read()
+
+        import base64
         source_type = "zip"
-        source_ref = zip_file.filename
+        source_ref = base64.b64encode(file_bytes).decode('utf-8')
 
     # Create job record
     job = Job(
@@ -258,10 +266,13 @@ async def get_job_results(
         # Results not yet available
         explanations = ExplanationSet()
     else:
+        per_file_explanations = project_result.per_file_explanations or {}
+
         explanations = ExplanationSet(
             project_summary=project_result.project_summary,
             overview_explanation=project_result.overview_explanation,
             flow_explanation=project_result.flow_explanation,
+            per_file_explanations=per_file_explanations,
             dependency_graph=project_result.dependency_graph,
             entry_points=project_result.entry_points,
             circular_deps=project_result.circular_deps,

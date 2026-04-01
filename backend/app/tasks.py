@@ -94,9 +94,8 @@ async def _run_pipeline_async(
             if source_type == "github":
                 ingestion_result = await ingest_github(job_id, source_ref)
             elif source_type == "zip":
-                # Read ZIP file (in production, from uploaded file)
-                with open(source_ref, "rb") as f:
-                    file_bytes = f.read()
+                import base64
+                file_bytes = base64.b64decode(source_ref)
                 ingestion_result = await ingest_zip(job_id, file_bytes)
             else:
                 raise ValueError(f"Invalid source type: {source_type}")
@@ -177,6 +176,7 @@ async def _run_pipeline_async(
                 dependency_graph=analysis.dependency_graph,
                 circular_deps=analysis.circular_deps,
                 external_deps=analysis.external_deps,
+                per_file_explanations=explanations.per_file_explanations,
             )
             session.add(project_result)
             await session.commit()

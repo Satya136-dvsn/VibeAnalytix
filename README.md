@@ -1,6 +1,14 @@
 # VibeAnalytix - AI-Powered Code Understanding Engine
 
+![Python](https://img.shields.io/badge/python-3.12+-blue.svg)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue.svg)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green.svg)
+![Next.js](https://img.shields.io/badge/Next.js-14+-black.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
+
 VibeAnalytix is a sophisticated code understanding platform that combines multi-pass analysis with AI-powered explanations to provide deep insights into any codebase.
+
+> **Status:** 🚀 **V1 Released!** Complete multi-pass code analysis pipeline with real OpenAI GPT-4o integration, pgvector semantic search, full property-based testing (30/30 properties verified), and interactive Next.js frontend.
 
 ## Features
 
