@@ -14,7 +14,7 @@ import asyncio
 import logging
 from dataclasses import dataclass, field
 from typing import Optional
-
+import google.generativeai as genai
 from openai import AsyncOpenAI, APIError, RateLimitError, APIConnectionError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -93,7 +93,14 @@ class KnowledgeBuilder:
         self.function_summaries: list[FunctionSummary] = []
         self.file_summaries: list[FileSummary] = []
         self.module_summaries: list[ModuleSummary] = []
-        self.client = AsyncOpenAI(api_key=settings.openai_api_key)
+        
+        self.gemini_mode = bool(settings.gemini_api_key)
+        if self.gemini_mode:
+            genai.configure(api_key=settings.gemini_api_key)
+            self.gemini_model = genai.GenerativeModel("gemini-1.5-flash")
+            self.client = None
+        else:
+            self.client = AsyncOpenAI(api_key=settings.openai_api_key)
 
     async def _generate_summary(
         self, context: str, summary_type: str = "general"
@@ -122,19 +129,32 @@ class KnowledgeBuilder:
 
         for attempt in range(self.MAX_RETRIES):
             try:
-                response = await self.client.chat.completions.create(
-                    model="gpt-3.5-turbo",
-                    messages=[
-                        {
-                            "role": "system",
-                            "content": "You are a code analysis expert. Provide concise, technical summaries of code elements.",
-                        },
-                        {"role": "user", "content": prompt},
-                    ],
-                    max_tokens=200,
-                    temperature=0.3,
-                )
-                return response.choices[0].message.content.strip()
+                if self.gemini_mode:
+                    # Gemini summary generation
+                    full_prompt = f"System: You are a code analysis expert. Provide concise, technical summaries of code elements.\n\nUser: {prompt}"
+                    response = await self.gemini_model.generate_content_async(
+                        full_prompt,
+                        generation_config=genai.types.GenerationConfig(
+                            max_output_tokens=200,
+                            temperature=0.3
+                        )
+                    )
+                    return response.text.strip()
+                else:
+                    # OpenAI summary generation
+                    response = await self.client.chat.completions.create(
+                        model="gpt-3.5-turbo",
+                        messages=[
+                            {
+                                "role": "system",
+                                "content": "You are a code analysis expert. Provide concise, technical summaries of code elements.",
+                            },
+                            {"role": "user", "content": prompt},
+                        ],
+                        max_tokens=200,
+                        temperature=0.3,
+                    )
+                    return response.choices[0].message.content.strip()
             except self.RETRYABLE_ERRORS as e:
                 if attempt < self.MAX_RETRIES - 1:
                     delay = self.RETRY_DELAYS[attempt]
@@ -503,11 +523,21 @@ async def generate_and_store_embeddings(
 
         for attempt in range(max_retries):
             try:
-                response = await client.embeddings.create(
-                    model="text-embedding-3-small",
-                    input=text,
-                )
-                embedding = response.data[0].embedding
+                if settings.gemini_api_key:
+                    # Gemini embedding generation
+                    response_embed = await genai.embed_content_async(
+                        model="models/text-embedding-004",
+                        content=text,
+                        task_type="retrieval_document",
+                    )
+                    embedding = response_embed['embedding']
+                else:
+                    # OpenAI embedding generation
+                    response = await client.embeddings.create(
+                        model="text-embedding-3-small",
+                        input=text,
+                    )
+                    embedding = response.data[0].embedding
                 break
             except retryable_errors as e:
                 if attempt < max_retries - 1:

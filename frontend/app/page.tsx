@@ -3,16 +3,17 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAppStore } from '@/lib/store'
-import { Github, Upload, LogOut, LogIn } from 'lucide-react'
+import { Github, Upload, LogOut, CheckCircle2, AlertCircle, FileArchive } from 'lucide-react'
 
 export default function SubmissionPage() {
   const router = useRouter()
-  const { isAuthenticated, user, logout, submitJob } = useAppStore()
+  const { isAuthenticated, user, logout, submitJob, pollJobStatus } = useAppStore()
   const [loading, setLoading] = useState(false)
   const [githubUrl, setGithubUrl] = useState('')
   const [zipFile, setZipFile] = useState<File | null>(null)
   const [error, setError] = useState('')
   const [mode, setMode] = useState<'github' | 'zip'>('github')
+  const [recentJobs, setRecentJobs] = useState<any[]>([])
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -63,166 +64,224 @@ export default function SubmissionPage() {
   }
 
   if (!isAuthenticated) {
-    return null // Redirect in progress
+    return null
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800">
-      {/* Header */}
-      <header className="border-b border-slate-700 bg-slate-800/50 backdrop-blur">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-white">VibeAnalytix</h1>
+    <div className="flex min-h-screen bg-background text-on-background">
+      {/* ── Side NavBar ────────────────────────────────────────── */}
+      <aside className="h-screen w-64 bg-slate-950 border-r border-outline-variant/10 flex flex-col p-4 gap-2 sticky top-0 shrink-0 hidden lg:flex">
+        <div className="mb-8 px-2">
+          <h1 className="text-xl font-headline italic text-slate-50 tracking-tight">VibeAnalytix</h1>
+          <p className="text-[10px] uppercase tracking-[0.2em] text-primary mt-1">Neural Precision</p>
+        </div>
+        <div className="space-y-1">
+          <div className="nav-item-active">
+            <span className="material-symbols-outlined text-lg">folder_open</span>
+            <span className="font-medium">Workspace</span>
+          </div>
+          <div className="nav-item">
+            <span className="material-symbols-outlined text-lg">insights</span>
+            <span>Analysis</span>
+          </div>
+          <div className="nav-item">
+            <span className="material-symbols-outlined text-lg">history</span>
+            <span>History</span>
+          </div>
+          <div className="nav-item">
+            <span className="material-symbols-outlined text-lg">settings</span>
+            <span>Settings</span>
+          </div>
+        </div>
+        <div className="mt-auto pt-4 border-t border-outline-variant/10 space-y-1">
+          <div className="px-3 py-4 mb-4 bg-surface-container-low rounded-xl border border-outline-variant/10">
+            <p className="text-[10px] text-on-surface-variant uppercase tracking-widest mb-1 truncate">{user?.email}</p>
+            <p className="text-xs text-primary font-medium flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+              Architect Active
+            </p>
+          </div>
+          <button onClick={logout} className="w-full flex items-center gap-3 px-3 py-2 text-slate-500 hover:text-rose-400 transition-colors">
+            <LogOut size={18} />
+            <span className="text-xs uppercase tracking-widest">Logout</span>
+          </button>
+        </div>
+      </aside>
+
+      {/* ── Main Content ───────────────────────────────────────── */}
+      <main className="flex-grow flex flex-col min-h-screen relative overflow-hidden">
+        {/* Background Ambient Glows */}
+        <div className="absolute top-[-10%] right-[-5%] w-[400px] h-[400px] bg-primary/10 rounded-full blur-[120px] pointer-events-none"></div>
+
+        {/* ── Header ───────────────────────────────────────────── */}
+        <header className="h-16 flex justify-between items-center px-8 w-full sticky top-0 z-50 glass-panel border-b border-outline-variant/10">
+          <nav className="hidden md:flex gap-6">
+            <a href="#" className="text-primary font-semibold border-b-2 border-primary text-sm py-5">Dashboard</a>
+            <a href="#" className="text-on-surface-variant hover:text-on-surface text-sm py-5 transition-all">Platform</a>
+          </nav>
           <div className="flex items-center gap-4">
-            <span className="text-slate-300">{user?.email}</span>
-            <button
-              onClick={logout}
-              className="btn-secondary flex items-center gap-2"
-            >
-              <LogOut size={18} />
-              Logout
-            </button>
+             <div className="relative hidden sm:block">
+               <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-lg">search</span>
+               <input type="text" placeholder="Search architecture..." className="bg-surface-container-highest border-none rounded-full py-1.5 pl-10 pr-4 text-xs focus:ring-1 focus:ring-primary w-64 transition-all text-on-surface placeholder:text-on-surface-variant" />
+             </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      {/* Main Content */}
-      <main className="max-w-2xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold text-white mb-4">
-            Understand Any Codebase
-          </h2>
-          <p className="text-xl text-slate-300">
-            Upload your code and get instant, AI-powered analysis
-          </p>
-        </div>
+        <div className="flex-grow max-w-5xl mx-auto w-full px-8 py-12 relative z-10 animate-fade-up">
 
-        {error && (
-          <div className="mb-6 p-4 bg-red-900/20 border border-red-700 rounded-lg text-red-200">
-            {error}
-          </div>
-        )}
+          {/* ── Hero ───────────────────────────────────────────── */}
+          <section className="mb-16">
+            <div className="mb-12">
+              <h2 className="font-headline text-4xl mb-2 text-on-surface">Welcome back, <span className="text-primary italic">Developer.</span></h2>
+              <p className="text-on-surface-variant text-sm tracking-tight">Initialize neural engine for deep repository inspection.</p>
+            </div>
 
-        {/* Submission Form */}
-        <div className="card p-8">
-          {/* Mode Selector */}
-          <div className="flex gap-4 mb-8">
-            <button
-              onClick={() => setMode('github')}
-              className={`flex-1 py-3 px-4 rounded-lg font-medium transition-colors ${
-                mode === 'github'
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-slate-100 text-slate-900 hover:bg-slate-200'
-              }`}
-            >
-              <Github className="inline mr-2" size={20} />
-              GitHub URL
-            </button>
-            <button
-              onClick={() => setMode('zip')}
-              className={`flex-1 py-3 px-4 rounded-lg font-medium transition-colors ${
-                mode === 'zip'
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-slate-100 text-slate-900 hover:bg-slate-200'
-              }`}
-            >
-              <Upload className="inline mr-2" size={20} />
-              ZIP File
-            </button>
-          </div>
-
-          {/* GitHub URL Form */}
-          {mode === 'github' && (
-            <form onSubmit={handleSubmitGithub}>
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-slate-900 mb-2">
-                  GitHub Repository URL
-                </label>
-                <input
-                  type="url"
-                  placeholder="https://github.com/owner/repo"
-                  value={githubUrl}
-                  onChange={(e) => setGithubUrl(e.target.value)}
-                  required
-                  className="input-field w-full"
-                />
-                <p className="text-sm text-slate-600 mt-2">
-                  Enter the HTTPS URL of any public GitHub repository
-                </p>
+            {error && (
+              <div className="alert-error mb-6">
+                <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                <span>{error}</span>
               </div>
+            )}
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full btn-primary"
-              >
-                {loading ? 'Submitting...' : 'Analyze Repository'}
-              </button>
-            </form>
-          )}
-
-          {/* ZIP File Form */}
-          {mode === 'zip' && (
-            <form onSubmit={handleSubmitZip}>
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-slate-900 mb-2">
-                  ZIP File
-                </label>
-                <div className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center hover:border-indigo-500 transition-colors cursor-pointer">
-                  <input
-                    type="file"
-                    accept=".zip"
-                    onChange={(e) => setZipFile(e.target.files?.[0] || null)}
-                    required
-                    className="hidden"
-                    id="zip-input"
-                  />
-                  <label
-                    htmlFor="zip-input"
-                    className="cursor-pointer flex flex-col items-center"
+            <div className="max-w-3xl">
+              <div className="bg-surface-container-low rounded-2xl p-1 border border-outline-variant/15 neural-glow backdrop-blur-md relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-primary/5 to-transparent pointer-events-none"></div>
+                
+                {/* Mode Selectors */}
+                <div className="flex gap-1 mb-1 z-10 relative">
+                  <button
+                    onClick={() => setMode('github')}
+                    className={`flex-1 py-3 text-xs font-bold uppercase tracking-widest rounded-xl transition-all ${
+                      mode === 'github'
+                        ? 'text-primary bg-surface-container-highest shadow-inner'
+                        : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container'
+                    }`}
                   >
-                    <Upload size={32} className="text-slate-400 mb-2" />
-                    <p className="text-sm font-medium text-slate-900">
-                      {zipFile ? zipFile.name : 'Click to select or drag and drop'}
-                    </p>
-                    <p className="text-sm text-slate-600">
-                      Max 100 MB, ZIP format only
-                    </p>
-                  </label>
+                    <Github className="inline-block mr-2 w-4 h-4 mb-0.5" />
+                    GitHub Repository
+                  </button>
+                  <button
+                    onClick={() => setMode('zip')}
+                    className={`flex-1 py-3 text-xs font-bold uppercase tracking-widest rounded-xl transition-all ${
+                      mode === 'zip'
+                        ? 'text-primary bg-surface-container-highest shadow-inner'
+                        : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container'
+                    }`}
+                  >
+                    <FileArchive className="inline-block mr-2 w-4 h-4 mb-0.5" />
+                    Upload ZIP
+                  </button>
+                </div>
+
+                {/* Form Area */}
+                <div className="p-8 relative z-10">
+                  {mode === 'github' ? (
+                    <form onSubmit={handleSubmitGithub} className="space-y-6">
+                      <div className="relative">
+                        <label className="section-label absolute -top-2 left-4 bg-surface-container-low px-2 z-10">Repository Endpoint</label>
+                        <input
+                          type="url"
+                          value={githubUrl}
+                          onChange={(e) => setGithubUrl(e.target.value)}
+                          placeholder="https://github.com/user/repo"
+                          required
+                          className="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-xl py-4 px-6 text-on-surface focus:ring-1 focus:ring-primary transition-all font-mono text-sm placeholder:text-outline-variant"
+                        />
+                      </div>
+                      <div className="flex flex-col items-center pt-2">
+                        <button type="submit" disabled={loading || !githubUrl} className="group relative px-12 py-4 bg-gradient-to-r from-primary to-primary-dim rounded-xl text-on-primary font-bold tracking-tight transition-all active:scale-95 shadow-[0_0_30px_rgba(182,160,255,0.3)] disabled:opacity-50 disabled:cursor-not-allowed">
+                          <div className="absolute inset-0 rounded-xl bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                          <span className="relative flex items-center gap-3">
+                            {loading ? 'INITIALIZING NEURAL ENGINE...' : 'START DEEP ANALYSIS'}
+                            <span className={`material-symbols-outlined text-xl ${loading ? 'animate-spin' : 'animate-pulse'}`}>psychology</span>
+                          </span>
+                        </button>
+                        <p className="mt-4 text-[10px] text-on-surface-variant uppercase tracking-[0.3em]">Neural Precision Engine v4.2.0</p>
+                      </div>
+                    </form>
+                  ) : (
+                    <form onSubmit={handleSubmitZip} className="space-y-6">
+                      <div className="relative">
+                        <label className="section-label absolute -top-2 left-4 bg-surface-container-low px-2 z-10">Archive Upload</label>
+                        <div className="w-full bg-surface-container-lowest border-2 border-dashed border-outline-variant/20 rounded-xl py-12 px-6 text-center hover:border-primary/50 transition-all group">
+                          <input
+                            type="file"
+                            accept=".zip"
+                            onChange={(e) => setZipFile(e.target.files?.[0] || null)}
+                            required
+                            className="hidden"
+                            id="zip-upload"
+                          />
+                          <label htmlFor="zip-upload" className="cursor-pointer flex flex-col items-center">
+                            <Upload className="w-8 h-8 text-on-surface-variant group-hover:text-primary transition-colors mb-3" />
+                            <p className="text-sm font-medium text-on-surface mb-1">
+                              {zipFile ? zipFile.name : 'Click to select project archive'}
+                            </p>
+                            <p className="text-xs text-on-surface-variant">ZIP format only (Max 100MB)</p>
+                          </label>
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-center pt-2">
+                        <button type="submit" disabled={loading || !zipFile} className="group relative px-12 py-4 bg-gradient-to-r from-primary to-primary-dim rounded-xl text-on-primary font-bold tracking-tight transition-all active:scale-95 shadow-[0_0_30px_rgba(182,160,255,0.3)] disabled:opacity-50 disabled:cursor-not-allowed">
+                          <div className="absolute inset-0 rounded-xl bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                          <span className="relative flex items-center gap-3">
+                            {loading ? 'UPLOADING ARCHIVE...' : 'START DEEP ANALYSIS'}
+                            <span className={`material-symbols-outlined text-xl ${loading ? 'animate-spin' : 'animate-pulse'}`}>psychology</span>
+                          </span>
+                        </button>
+                        <p className="mt-4 text-[10px] text-on-surface-variant uppercase tracking-[0.3em]">Neural Precision Engine v4.2.0</p>
+                      </div>
+                    </form>
+                  )}
                 </div>
               </div>
+            </div>
+          </section>
 
-              <button
-                type="submit"
-                disabled={loading || !zipFile}
-                className="w-full btn-primary"
-              >
-                {loading ? 'Submitting...' : 'Analyze Code'}
-              </button>
-            </form>
-          )}
-        </div>
+          {/* ── Features Info ────────────────────────────────────── */}
+          <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="card p-6 border-transparent bg-surface-container">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary mb-4 border border-primary/20">
+                <span className="material-symbols-outlined">bolt</span>
+              </div>
+              <h3 className="font-semibold text-on-surface mb-2 tracking-tight">Fast Analysis</h3>
+              <p className="text-sm text-on-surface-variant leading-relaxed">
+                Get results in minutes with our optimized multi-pass parsing architecture.
+              </p>
+            </div>
+            <div className="card p-6 border-transparent bg-surface-container">
+              <div className="w-10 h-10 rounded-lg bg-tertiary/10 flex items-center justify-center text-tertiary mb-4 border border-tertiary/20">
+                <span className="material-symbols-outlined">psychology</span>
+              </div>
+              <h3 className="font-semibold text-on-surface mb-2 tracking-tight">AI-Powered</h3>
+              <p className="text-sm text-on-surface-variant leading-relaxed">
+                Advanced understanding leveraging the latest LLMs and semantic embeddings.
+              </p>
+            </div>
+            <div className="card p-6 border-transparent bg-surface-container">
+              <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 mb-4 border border-emerald-500/20">
+                <span className="material-symbols-outlined">account_tree</span>
+              </div>
+              <h3 className="font-semibold text-on-surface mb-2 tracking-tight">Complete View</h3>
+              <p className="text-sm text-on-surface-variant leading-relaxed">
+                See high-level overviews, granular file structures, and execution flows seamlessly.
+              </p>
+            </div>
+          </section>
 
-        {/* Info Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
-          <div className="card p-6">
-            <h3 className="font-bold text-slate-900 mb-2">Fast Analysis</h3>
-            <p className="text-sm text-slate-600">
-              Get results in minutes with our optimized pipeline
-            </p>
-          </div>
-          <div className="card p-6">
-            <h3 className="font-bold text-slate-900 mb-2">AI-Powered</h3>
-            <p className="text-sm text-slate-600">
-              Advanced understanding using OpenAI GPT-4
-            </p>
-          </div>
-          <div className="card p-6">
-            <h3 className="font-bold text-slate-900 mb-2">Complete View</h3>
-            <p className="text-sm text-slate-600">
-              See overview, structure, and execution flow
-            </p>
-          </div>
         </div>
+        
+        {/* ── Footer ───────────────────────────────────────────── */}
+        <footer className="w-full bg-slate-950 border-t border-outline-variant/10 flex flex-col md:flex-row justify-between items-center px-12 py-6 mt-auto shrink-0 z-10">
+          <div className="mb-4 md:mb-0">
+            <span className="text-lg font-headline italic text-slate-100">VibeAnalytix</span>
+            <p className="text-[10px] uppercase tracking-[0.25em] text-slate-500 mt-1">© 2024 VibeAnalytix. Neural Precision Engineering.</p>
+          </div>
+          <div className="flex gap-6">
+            <a href="#" className="text-[10px] uppercase tracking-widest text-slate-500 hover:text-primary transition-colors">Security Architecture</a>
+            <a href="#" className="text-[10px] uppercase tracking-widest text-slate-500 hover:text-primary transition-colors">Terminal Details</a>
+          </div>
+        </footer>
       </main>
     </div>
   )

@@ -3,7 +3,7 @@ Application configuration via environment variables using pydantic-settings.
 All settings are validated and typed at startup.
 """
 
-from typing import Literal
+from typing import Literal, Optional
 from pydantic_settings import BaseSettings
 
 
@@ -27,7 +27,10 @@ class Settings(BaseSettings):
     jwt_expiration_hours: int = 24
 
     # OpenAI
-    openai_api_key: str
+    openai_api_key: Optional[str] = None
+    
+    # Gemini
+    gemini_api_key: Optional[str] = None
 
     # File size limits (MB)
     max_repo_size_mb: int = 500

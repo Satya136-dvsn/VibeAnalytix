@@ -14,6 +14,7 @@ import json
 import logging
 from typing import Optional
 
+import google.generativeai as genai
 from openai import AsyncOpenAI, APIError, RateLimitError, APIConnectionError
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -39,16 +40,26 @@ class ExplanationEngine:
     # Retryable OpenAI errors
     RETRYABLE_ERRORS = (APIError, RateLimitError, APIConnectionError)
 
-    def __init__(self, api_key: str = settings.openai_api_key):
+    def __init__(self, api_key: str = None):
         """
         Initialize explanation engine.
 
         Args:
-            api_key: OpenAI API key
+            api_key: LLM API key (if None, use settings)
         """
-        self.api_key = api_key
-        self.client = AsyncOpenAI(api_key=api_key)
-        self.model = "gpt-4o"
+        self.gemini_mode = bool(settings.gemini_api_key)
+        
+        if self.gemini_mode:
+            self.api_key = api_key or settings.gemini_api_key
+            genai.configure(api_key=self.api_key)
+            self.gemini_model = genai.GenerativeModel("gemini-2.0-flash")
+            self.client = None
+            self.model = "gemini-2.0-flash"
+        else:
+            self.api_key = api_key or settings.openai_api_key
+            self.client = AsyncOpenAI(api_key=self.api_key)
+            self.model = "gpt-4o"
+            
         self.retry_delays = [1, 2, 4]  # Exponential backoff seconds
         self.max_retries = 3
 
@@ -96,28 +107,31 @@ class ExplanationEngine:
         self, system_prompt: str, user_prompt: str, response_format: type[BaseModel] = ExplanationResponseFormat
     ) -> str:
         """
-        Make a single OpenAI chat completion call with structured output.
-
-        Args:
-            system_prompt: System role message
-            user_prompt: User role message
-            response_format: Pydantic model for structured output
-
-        Returns:
-            Generated text response
+        Make a single chat completion call with structured output.
         """
-        response = await self.client.chat.completions.create(
-            model=self.model,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ],
-            response_format={"type": "json_object", "schema": response_format.model_json_schema()},
-            temperature=0.3,
-            max_tokens=2000,
-        )
+        if self.gemini_mode:
+            # Gemini structured call
+            prompt = f"{system_prompt}\n\n{user_prompt}\n\nPlease respond in valid JSON matching this schema: {response_format.model_json_schema()}"
+            response = await self.gemini_model.generate_content_async(
+                prompt,
+                generation_config=genai.types.GenerationConfig(response_mime_type="application/json")
+            )
+            content = response.text
+        else:
+            # OpenAI structured call
+            response = await self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
+                response_format={"type": "json_object", "schema": response_format.model_json_schema()},
+                temperature=0.3,
+                max_tokens=2000,
+            )
+            content = response.choices[0].message.content or ""
+            
         # Parse structured response
-        content = response.choices[0].message.content or ""
         try:
             parsed = json.loads(content)
             return parsed.get("explanation", content)
@@ -126,25 +140,26 @@ class ExplanationEngine:
 
     async def _call_openai(self, system_prompt: str, user_prompt: str) -> str:
         """
-        Make a single OpenAI chat completion call.
-
-        Args:
-            system_prompt: System role message
-            user_prompt: User role message
-
-        Returns:
-            Generated text response
+        Make a single chat completion call.
         """
-        response = await self.client.chat.completions.create(
-            model=self.model,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ],
-            temperature=0.3,
-            max_tokens=2000,
-        )
-        return response.choices[0].message.content or ""
+        if self.gemini_mode:
+            prompt = f"{system_prompt}\n\n{user_prompt}"
+            response = await self.gemini_model.generate_content_async(
+                prompt,
+                generation_config=genai.types.GenerationConfig(temperature=0.3)
+            )
+            return response.text
+        else:
+            response = await self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
+                temperature=0.3,
+                max_tokens=2000,
+            )
+            return response.choices[0].message.content or ""
 
     async def _retrieve_similar_context(
         self,
@@ -200,11 +215,19 @@ class ExplanationEngine:
             query_text = " ".join(query_parts) if query_parts else "code analysis"
 
             # Generate a real query embedding from the project context
-            response = await self.client.embeddings.create(
-                model="text-embedding-3-small",
-                input=query_text[:8000],  # Truncate to stay within token limits
-            )
-            query_embedding = response.data[0].embedding
+            if self.gemini_mode:
+                response = await genai.embed_content_async(
+                    model="models/text-embedding-004",
+                    content=query_text[:8000],
+                    task_type="retrieval_query",
+                )
+                query_embedding = response['embedding']
+            else:
+                response = await self.client.embeddings.create(
+                    model="text-embedding-3-small",
+                    input=query_text[:8000],  # Truncate to stay within token limits
+                )
+                query_embedding = response.data[0].embedding
 
             # Use the real embedding for semantic retrieval
             all_summaries = await semantic_retrieval(

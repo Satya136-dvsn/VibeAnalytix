@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>VibeAnalytix | Analysis Results</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;1,6..72,400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "primary-fixed-dim": "#9c7eff",
+                    "surface-container": "#181a1c",
+                    "outline": "#757578",
+                    "background": "#0d0e10",
+                    "tertiary-fixed-dim": "#00d4ec",
+                    "on-secondary": "#47545a",
+                    "on-secondary-container": "#c5d2da",
+                    "inverse-on-surface": "#555557",
+                    "tertiary-dim": "#00d4ec",
+                    "inverse-surface": "#faf9fb",
+                    "on-error": "#490013",
+                    "secondary-fixed-dim": "#c9d6de",
+                    "surface-variant": "#242629",
+                    "primary-dim": "#7e51ff",
+                    "on-tertiary-fixed": "#003840",
+                    "inverse-primary": "#6834eb",
+                    "surface-container-highest": "#242629",
+                    "surface-tint": "#b6a0ff",
+                    "on-tertiary-container": "#004d57",
+                    "tertiary": "#81ecff",
+                    "surface-bright": "#2b2c2f",
+                    "tertiary-fixed": "#00e3fd",
+                    "on-tertiary": "#005762",
+                    "error-dim": "#d73357",
+                    "secondary-fixed": "#d7e4ec",
+                    "surface-dim": "#0d0e10",
+                    "on-background": "#fdfbfe",
+                    "on-primary": "#340090",
+                    "on-surface-variant": "#ababad",
+                    "surface": "#0d0e10",
+                    "on-secondary-fixed": "#354147",
+                    "surface-container-lowest": "#000000",
+                    "error-container": "#a70138",
+                    "secondary-dim": "#c9d6de",
+                    "on-primary-fixed": "#000000",
+                    "on-primary-container": "#280072",
+                    "primary-container": "#a98fff",
+                    "surface-container-high": "#1e2022",
+                    "on-error-container": "#ffb2b9",
+                    "tertiary-container": "#00e3fd",
+                    "outline-variant": "#47484a",
+                    "on-secondary-fixed-variant": "#515d64",
+                    "surface-container-low": "#121316",
+                    "secondary": "#d7e4ec",
+                    "on-tertiary-fixed-variant": "#005762",
+                    "primary": "#b6a0ff",
+                    "on-primary-fixed-variant": "#32008a",
+                    "primary-fixed": "#a98fff",
+                    "error": "#ff6e84",
+                    "on-surface": "#fdfbfe",
+                    "secondary-container": "#3c494f"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "fontFamily": {
+                    "headline": ["Newsreader"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .font-serif { font-family: 'Newsreader', serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .code-block { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #242629; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #47484a; }
+    </style>
+</head>
+<body class="bg-background text-on-background selection:bg-primary/30">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-slate-900/60 backdrop-blur-xl shadow-[0_20_50px_rgba(182,160,255,0.08)] flex justify-between items-center px-8 py-4 w-full">
+<div class="flex items-center gap-8">
+<span class="text-2xl font-serif italic text-slate-50">VibeAnalytix</span>
+<div class="hidden md:flex gap-6 items-center">
+<a class="text-slate-400 hover:text-slate-200 text-sm transition-all duration-300" href="#">Platform</a>
+<a class="text-slate-400 hover:text-slate-200 text-sm transition-all duration-300" href="#">Solutions</a>
+<a class="text-slate-400 hover:text-slate-200 text-sm transition-all duration-300" href="#">Security</a>
+<a class="text-slate-400 hover:text-slate-200 text-sm transition-all duration-300" href="#">Pricing</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-slate-400 hover:text-slate-200 transition-all duration-300 scale-95 active:scale-90">Sign In</button>
+<button class="bg-primary-container text-on-primary-container px-4 py-2 rounded-lg font-semibold scale-95 active:scale-90 transition-all duration-300">Dashboard</button>
+</div>
+</nav>
+<div class="flex h-screen pt-16">
+<!-- SideNavBar -->
+<aside class="h-screen w-64 border-r border-slate-800/50 bg-slate-950 flex flex-col h-full p-4 gap-2 hidden lg:flex">
+<div class="mb-4 px-2">
+<div class="flex items-center gap-3">
+<img class="w-8 h-8 rounded-full border border-outline-variant/30" data-alt="close-up portrait of a professional male engineer with soft focused lighting on dark background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDrz4f0oB6RfpHkeHFex-zlLDF1EOzF1OwEqPvHYsDylJEw8m40SBb36w53t0JaLXl4Gv6RySPQpdM9ru3yt0A9layb6pGe2PwiHmG3--DjrA_qfzre3Ur5czHDu2KNMdBUikQvPeatNItKLw29ue6u9472zyKzd-lAosclJQAQjT2_TnS-LUYczGWVK0ObDmApwWo_bqb0rKq-aCpb4yQOsIJ4ziwN3iBfUCU-6zhNMrA-wctpN2WG_AWZGLs3b5dgwfD71lOGCp8"/>
+<div>
+<p class="text-on-background text-xs font-semibold">Project Alpha</p>
+<p class="text-slate-500 text-[10px]">Neural Analysis Active</p>
+</div>
+</div>
+</div>
+<button class="bg-primary text-on-primary py-2 px-4 rounded-xl text-sm font-bold flex items-center justify-center gap-2 mb-4 hover:brightness-110 transition-all">
+<span class="material-symbols-outlined text-sm">add</span>
+                New Analysis
+            </button>
+<nav class="flex-1 flex flex-col gap-1">
+<a class="text-slate-500 hover:bg-slate-900 transition-colors flex items-center gap-3 px-3 py-2 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="folder_open">folder_open</span>
+<span class="text-sm">Workspace</span>
+</a>
+<a class="text-violet-400 bg-slate-900/50 rounded-lg flex items-center gap-3 px-3 py-2" href="#">
+<span class="material-symbols-outlined" data-icon="insights">insights</span>
+<span class="text-sm">Analysis</span>
+</a>
+<a class="text-slate-500 hover:bg-slate-900 transition-colors flex items-center gap-3 px-3 py-2 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="rule">rule</span>
+<span class="text-sm">Review</span>
+</a>
+<a class="text-slate-500 hover:bg-slate-900 transition-colors flex items-center gap-3 px-3 py-2 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+<span class="text-sm">History</span>
+</a>
+<a class="text-slate-500 hover:bg-slate-900 transition-colors flex items-center gap-3 px-3 py-2 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="text-sm">Settings</span>
+</a>
+</nav>
+<div class="mt-auto border-t border-slate-900 pt-4 flex flex-col gap-1">
+<a class="text-slate-500 hover:bg-slate-900 transition-colors flex items-center gap-3 px-3 py-2 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+<span class="text-sm">Documentation</span>
+</a>
+<a class="text-slate-500 hover:bg-slate-900 transition-colors flex items-center gap-3 px-3 py-2 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+<span class="text-sm">Support</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 overflow-hidden flex flex-col">
+<!-- Header Area -->
+<header class="p-8 pb-4 flex flex-col gap-4 border-b border-outline-variant/10">
+<div class="flex justify-between items-start">
+<div class="flex flex-col gap-1">
+<div class="flex items-center gap-3">
+<h1 class="text-3xl font-serif text-on-background">fastapi-core-engine</h1>
+<span class="px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 text-[10px] font-bold uppercase tracking-widest border border-emerald-900/50">Completed</span>
+</div>
+<p class="text-on-surface-variant text-sm">Analyzed 142 files in 4.2 seconds • Git Hash: <span class="code-block text-primary-fixed-dim">a18f2c3</span></p>
+</div>
+<div class="flex gap-2">
+<button class="bg-surface-container-highest p-2 rounded-lg text-on-surface-variant hover:text-on-background transition-colors">
+<span class="material-symbols-outlined">share</span>
+</button>
+<button class="bg-surface-container-highest p-2 rounded-lg text-on-surface-variant hover:text-on-background transition-colors">
+<span class="material-symbols-outlined">download</span>
+</button>
+</div>
+</div>
+<!-- Tabs -->
+<div class="flex gap-8 mt-4">
+<button class="pb-2 text-sm font-semibold text-primary border-b-2 border-primary transition-all">Overview</button>
+<button class="pb-2 text-sm font-semibold text-on-surface-variant hover:text-on-background transition-all">Structure</button>
+<button class="pb-2 text-sm font-semibold text-on-surface-variant hover:text-on-background transition-all">Flow</button>
+</div>
+</header>
+<!-- Scrollable Content -->
+<div class="flex-1 overflow-y-auto p-8 flex gap-8">
+<!-- Structure Tree (Left Side of Main) -->
+<div class="w-72 flex flex-col gap-4 sticky top-0 h-fit">
+<h3 class="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Repository Structure</h3>
+<div class="bg-surface-container-low rounded-xl p-4 flex flex-col gap-1">
+<div class="flex items-center gap-2 text-sm text-on-background/80 py-1 cursor-pointer">
+<span class="material-symbols-outlined text-[18px] text-tertiary">folder</span>
+<span>app</span>
+</div>
+<div class="flex items-center gap-2 text-sm text-on-background/80 py-1 pl-4 cursor-pointer">
+<span class="material-symbols-outlined text-[18px] text-tertiary">folder</span>
+<span>api</span>
+</div>
+<div class="flex items-center gap-2 text-sm text-primary py-1 pl-8 cursor-pointer bg-primary/10 rounded-md">
+<span class="material-symbols-outlined text-[18px]">description</span>
+<span>main.py</span>
+</div>
+<div class="flex items-center gap-2 text-sm text-on-background/80 py-1 pl-8 cursor-pointer">
+<span class="material-symbols-outlined text-[18px]">description</span>
+<span>router.py</span>
+</div>
+<div class="flex items-center gap-2 text-sm text-on-background/80 py-1 pl-4 cursor-pointer">
+<span class="material-symbols-outlined text-[18px] text-tertiary">folder</span>
+<span>core</span>
+</div>
+<div class="flex items-center gap-2 text-sm text-on-background/80 py-1 pl-4 cursor-pointer">
+<span class="material-symbols-outlined text-[18px] text-tertiary">folder</span>
+<span>models</span>
+</div>
+<div class="flex items-center gap-2 text-sm text-on-background/80 py-1 cursor-pointer">
+<span class="material-symbols-outlined text-[18px] text-tertiary">folder</span>
+<span>tests</span>
+</div>
+<div class="flex items-center gap-2 text-sm text-on-background/80 py-1 cursor-pointer">
+<span class="material-symbols-outlined text-[18px]">description</span>
+<span>requirements.txt</span>
+</div>
+<div class="flex items-center gap-2 text-sm text-on-background/80 py-1 cursor-pointer">
+<span class="material-symbols-outlined text-[18px]">description</span>
+<span>README.md</span>
+</div>
+</div>
+</div>
+<!-- Tab Content: Overview -->
+<div class="flex-1 space-y-12">
+<!-- Project Summary Section -->
+<section class="space-y-6">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<!-- Bento Card 1: Key Tech -->
+<div class="md:col-span-2 bg-surface-container-low rounded-xl p-8 relative overflow-hidden">
+<div class="relative z-10">
+<h2 class="text-2xl font-serif mb-4 italic">Neural Architecture Summary</h2>
+<p class="text-on-surface-variant leading-relaxed text-sm mb-6 max-w-lg">
+                                        The <span class="text-on-background font-semibold">fastapi-core-engine</span> serves as a high-performance orchestration layer designed for real-time telemetry processing. Utilizing an asynchronous lifecycle, it bridges edge computing inputs with distributed persistence layers.
+                                    </p>
+<div class="flex flex-wrap gap-2">
+<span class="bg-surface-container-highest px-3 py-1 rounded-full text-[10px] font-bold text-tertiary border border-outline-variant/20 uppercase tracking-tighter">Python 3.11</span>
+<span class="bg-surface-container-highest px-3 py-1 rounded-full text-[10px] font-bold text-tertiary border border-outline-variant/20 uppercase tracking-tighter">FastAPI</span>
+<span class="bg-surface-container-highest px-3 py-1 rounded-full text-[10px] font-bold text-tertiary border border-outline-variant/20 uppercase tracking-tighter">Redis-Streams</span>
+<span class="bg-surface-container-highest px-3 py-1 rounded-full text-[10px] font-bold text-tertiary border border-outline-variant/20 uppercase tracking-tighter">SQLAlchemy</span>
+</div>
+</div>
+<div class="absolute right-0 top-0 w-1/3 h-full opacity-10 pointer-events-none">
+<img class="w-full h-full object-cover" data-alt="abstract tech background with glowing blue circuit lines and digital geometric patterns in a dark space" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCOKf1pXmMeJkxQ25ImxRMZ8JZz-Jex2UTuGPzAjwKczzs2wZlocXoy_ImS9Kl9IzZ-6--K_GukBTmUF0Vjwl8xnhHdbttezZnilowFLIcxD5putfZrhmt0cW63ZvxWqasM4PgMxf95qOPBmlDZsWslVjwEtAocpZf9jPQD3_uPfL6RlNwF_tMSKSTZ2wSCasr5FRmNOKhZcwzIZcubA9YW2tGkQVu-Yt5atHiO25qpG_7xvfcnVeEYgFDZSdU5bx-yOc8ypxllV6g"/>
+</div>
+</div>
+<!-- Bento Card 2: Core Purpose -->
+<div class="bg-surface-container-high rounded-xl p-8 flex flex-col justify-center">
+<span class="material-symbols-outlined text-primary text-3xl mb-4">hub</span>
+<h4 class="text-sm font-bold text-on-background mb-2">Core Purpose</h4>
+<p class="text-on-surface-variant text-xs leading-relaxed">
+                                    Unified API interface for neural-network driven analytical tasks, managing stateful websocket connections and horizontal task scaling.
+                                </p>
+</div>
+</div>
+</section>
+<!-- Dependency Graph Visualization -->
+<section class="space-y-4">
+<div class="flex justify-between items-end">
+<h3 class="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Dependency Graph</h3>
+<button class="text-[10px] text-primary hover:underline font-bold uppercase">Expand Visualization</button>
+</div>
+<div class="bg-surface-container-low rounded-xl h-80 relative overflow-hidden border border-outline-variant/5">
+<div class="absolute inset-0 flex items-center justify-center">
+<!-- Mock SVG for Graph -->
+<div class="relative w-full h-full flex items-center justify-center opacity-80">
+<div class="absolute w-[400px] h-[250px]">
+<!-- Central Node -->
+<div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-full bg-primary/20 border border-primary flex items-center justify-center z-10">
+<span class="text-[8px] font-bold text-on-background">main.py</span>
+</div>
+<!-- Connections -->
+<svg class="absolute inset-0 w-full h-full">
+<line stroke="rgba(182, 160, 255, 0.4)" stroke-width="1" x1="200" x2="100" y1="125" y2="50"></line>
+<line stroke="rgba(182, 160, 255, 0.4)" stroke-width="1" x1="200" x2="300" y1="125" y2="50"></line>
+<line stroke="rgba(182, 160, 255, 0.4)" stroke-width="1" x1="200" x2="100" y1="125" y2="200"></line>
+<line stroke="rgba(182, 160, 255, 0.4)" stroke-width="1" x1="200" x2="300" y1="125" y2="200"></line>
+</svg>
+<!-- Satellite Nodes -->
+<div class="absolute left-[80px] top-[40px] w-12 h-12 rounded-full bg-surface-container-highest border border-outline-variant/30 flex items-center justify-center">
+<span class="text-[7px] text-on-surface-variant">router.py</span>
+</div>
+<div class="absolute right-[80px] top-[40px] w-12 h-12 rounded-full bg-surface-container-highest border border-outline-variant/30 flex items-center justify-center">
+<span class="text-[7px] text-on-surface-variant">config.py</span>
+</div>
+<div class="absolute left-[80px] bottom-[40px] w-12 h-12 rounded-full bg-surface-container-highest border border-outline-variant/30 flex items-center justify-center">
+<span class="text-[7px] text-on-surface-variant">auth.py</span>
+</div>
+<div class="absolute right-[80px] bottom-[40px] w-12 h-12 rounded-full bg-surface-container-highest border border-outline-variant/30 flex items-center justify-center">
+<span class="text-[7px] text-on-surface-variant">schemas.py</span>
+</div>
+</div>
+</div>
+</div>
+<div class="absolute bottom-4 left-4 flex gap-4">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-primary"></div>
+<span class="text-[10px] text-on-surface-variant">Core Controller</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-outline-variant"></div>
+<span class="text-[10px] text-on-surface-variant">Support Library</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Code Insights / Syntax Highlighting -->
+<section class="space-y-4">
+<h3 class="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Key Function Detection</h3>
+<div class="bg-surface-container-lowest border border-outline-variant/10 rounded-xl overflow-hidden">
+<div class="bg-surface-container-low px-4 py-2 border-b border-outline-variant/10 flex justify-between items-center">
+<span class="text-xs text-on-surface-variant code-block">app/core/engine.py</span>
+<span class="text-[10px] text-primary-fixed-dim uppercase font-bold tracking-widest">Crucial Path</span>
+</div>
+<div class="p-6">
+<pre class="code-block text-xs leading-relaxed"><span class="text-violet-400">async def</span> <span class="text-tertiary">initialize_neural_bridge</span>(ctx: Context):
+    <span class="text-slate-500">"""
+    Sets up the high-speed telemetry link with fault-tolerant retries.
+    """</span>
+    <span class="text-violet-400">try:</span>
+        bridge = <span class="text-violet-400">await</span> StreamBridge.connect(ctx.config.stream_url)
+        <span class="text-violet-400">await</span> bridge.handshake()
+        <span class="text-violet-400">return</span> bridge
+    <span class="text-violet-400">except</span> ConnectionError <span class="text-violet-400">as</span> e:
+        <span class="text-tertiary">logger</span>.error(<span class="text-emerald-400">f"Bridge failure: {e}"</span>)
+        <span class="text-violet-400">raise</span> NeuralBridgeException()</pre>
+</div>
+</div>
+<div class="p-4 bg-primary/5 rounded-lg border border-primary/10">
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-primary text-sm">auto_awesome</span>
+<span class="text-xs font-bold text-primary uppercase tracking-widest">AI Context</span>
+</div>
+<p class="text-xs text-on-surface-variant leading-relaxed">
+                                This function is the entry point for all data ingestion. It handles asynchronous context management and ensures the system doesn't deadlock during initial socket handshakes.
+                            </p>
+</div>
+</section>
+</div>
+</div>
+</main>
+</div>
+<!-- Footer -->
+<footer class="w-full border-t border-slate-900 bg-slate-950 flex flex-col md:flex-row justify-between items-center px-12 py-8 w-full z-50">
+<div class="flex flex-col gap-2">
+<span class="text-lg font-serif text-slate-100">VibeAnalytix</span>
+<p class="font-sans text-xs uppercase tracking-widest text-slate-500">© 2024 VibeAnalytix. Neural Precision Engineering.</p>
+</div>
+<div class="flex gap-8 mt-6 md:mt-0">
+<a class="font-sans text-xs uppercase tracking-widest text-slate-500 hover:text-violet-300 transition-colors" href="#">Security Architecture</a>
+<a class="font-sans text-xs uppercase tracking-widest text-slate-500 hover:text-violet-300 transition-colors" href="#">SOC2 Compliance</a>
+<a class="font-sans text-xs uppercase tracking-widest text-slate-500 hover:text-violet-300 transition-colors" href="#">Technical Journal</a>
+<a class="font-sans text-xs uppercase tracking-widest text-slate-500 hover:text-violet-300 transition-colors" href="#">API Docs</a>
+</div>
+</footer>
+</body></html>

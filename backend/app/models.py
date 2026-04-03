@@ -119,7 +119,7 @@ class FunctionSummary(Base):
     line_start: Optional[int] = Column(Integer, nullable=True)
     line_end: Optional[int] = Column(Integer, nullable=True)
     summary_text: Optional[str] = Column(Text, nullable=True)
-    embedding = Column(Vector(1536), nullable=True)  # type: ignore # pgvector VECTOR type for semantic search
+    embedding = Column(Vector(768), nullable=True)  # type: ignore # Vector(768) matches Gemini text-embedding-004
 
     # Index for vector similarity search using IVFFlat
     __table_args__ = (

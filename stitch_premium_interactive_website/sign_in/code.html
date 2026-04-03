@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;1,6..72,400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+                  "secondary-fixed-dim": "#c9d6de",
+                  "secondary-fixed": "#d7e4ec",
+                  "on-primary": "#340090",
+                  "surface-variant": "#242629",
+                  "error-dim": "#d73357",
+                  "on-tertiary-container": "#004d57",
+                  "tertiary": "#81ecff",
+                  "background": "#0d0e10",
+                  "on-secondary-fixed-variant": "#515d64",
+                  "error-container": "#a70138",
+                  "surface-container-high": "#1e2022",
+                  "on-primary-fixed": "#000000",
+                  "primary": "#b6a0ff",
+                  "tertiary-dim": "#00d4ec",
+                  "inverse-surface": "#faf9fb",
+                  "surface-tint": "#b6a0ff",
+                  "secondary-dim": "#c9d6de",
+                  "inverse-on-surface": "#555557",
+                  "on-tertiary": "#005762",
+                  "on-surface": "#fdfbfe",
+                  "on-background": "#fdfbfe",
+                  "surface-container-highest": "#242629",
+                  "surface": "#0d0e10",
+                  "on-surface-variant": "#ababad",
+                  "surface-container": "#181a1c",
+                  "surface-container-low": "#121316",
+                  "on-secondary": "#47545a",
+                  "tertiary-container": "#00e3fd",
+                  "on-tertiary-fixed": "#003840",
+                  "on-secondary-fixed": "#354147",
+                  "on-tertiary-fixed-variant": "#005762",
+                  "on-primary-fixed-variant": "#32008a",
+                  "on-primary-container": "#280072",
+                  "secondary": "#d7e4ec",
+                  "tertiary-fixed": "#00e3fd",
+                  "secondary-container": "#3c494f",
+                  "surface-bright": "#2b2c2f",
+                  "primary-fixed": "#a98fff",
+                  "inverse-primary": "#6834eb",
+                  "outline-variant": "#47484a",
+                  "surface-container-lowest": "#000000",
+                  "surface-dim": "#0d0e10",
+                  "on-secondary-container": "#c5d2da",
+                  "on-error": "#490013",
+                  "outline": "#757578",
+                  "primary-dim": "#7e51ff",
+                  "error": "#ff6e84",
+                  "on-error-container": "#ffb2b9",
+                  "primary-container": "#a98fff",
+                  "tertiary-fixed-dim": "#00d4ec",
+                  "primary-fixed-dim": "#9c7eff"
+          },
+          "borderRadius": {
+                  "DEFAULT": "0.125rem",
+                  "lg": "0.25rem",
+                  "xl": "0.5rem",
+                  "full": "0.75rem"
+          },
+          "fontFamily": {
+                  "headline": ["Newsreader", "serif"],
+                  "body": ["Inter", "sans-serif"],
+                  "label": ["Inter", "sans-serif"]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    body {
+      background-color: #0d0e10;
+      color: #fdfbfe;
+    }
+    .glass-effect {
+      background: rgba(24, 26, 28, 0.6);
+      backdrop-filter: blur(40px);
+    }
+    .neural-glow {
+      box-shadow: 0px 20px 50px rgba(182, 160, 255, 0.08);
+    }
+  </style>
+</head>
+<body class="font-body selection:bg-primary selection:text-on-primary">
+<!-- TopNavBar Suppressed for Transactional Focus per Global Visual Tokens -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-8 py-6 w-full">
+<div class="text-2xl font-headline italic text-slate-50">VibeAnalytix</div>
+<div>
+<a class="text-on-surface-variant font-label text-sm hover:text-primary transition-colors" href="#">Support</a>
+</div>
+</header>
+<main class="relative min-h-screen flex items-center justify-center px-6 overflow-hidden">
+<!-- Background Ambient Glows -->
+<div class="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px] pointer-events-none"></div>
+<div class="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-primary-dim/5 rounded-full blur-[150px] pointer-events-none"></div>
+<div class="w-full max-w-md z-10">
+<!-- Brand & Heading Cluster -->
+<div class="text-center mb-10 space-y-4">
+<h1 class="text-5xl font-headline text-on-surface leading-tight">Access Neural Analytics</h1>
+<p class="text-on-surface-variant text-base font-body tracking-tight leading-relaxed max-w-xs mx-auto">
+          Continue your codebase exploration with deliberate intelligence.
+        </p>
+</div>
+<!-- Centered Login Card -->
+<div class="surface-container-low rounded-xl p-8 neural-glow border border-outline-variant/10">
+<form class="space-y-6">
+<!-- Email Field -->
+<div class="space-y-2">
+<label class="block font-label text-[0.6875rem] uppercase tracking-widest text-on-surface-variant ml-1" for="email">Email</label>
+<input class="w-full bg-surface-container-highest border-none rounded-lg py-3.5 px-4 text-on-surface placeholder:text-outline/50 focus:ring-1 focus:ring-primary transition-all font-body text-sm" id="email" name="email" placeholder="architect@vibeanalytix.io" type="email"/>
+</div>
+<!-- Password Field -->
+<div class="space-y-2">
+<div class="flex justify-between items-end">
+<label class="block font-label text-[0.6875rem] uppercase tracking-widest text-on-surface-variant ml-1" for="password">Password</label>
+<a class="text-[0.6875rem] text-primary hover:text-primary-fixed transition-colors font-label uppercase tracking-widest" href="#">Forgot Password</a>
+</div>
+<div class="relative">
+<input class="w-full bg-surface-container-highest border-none rounded-lg py-3.5 px-4 text-on-surface placeholder:text-outline/50 focus:ring-1 focus:ring-primary transition-all font-body text-sm" id="password" name="password" placeholder="••••••••" type="password"/>
+<button class="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface" type="button">
+<span class="material-symbols-outlined text-xl">visibility_off</span>
+</button>
+</div>
+</div>
+<!-- Primary CTA: Pulse Kinetic Button -->
+<button class="w-full bg-gradient-to-r from-primary to-primary-dim text-on-primary font-label font-semibold py-4 rounded-lg shadow-lg hover:brightness-110 active:scale-[0.98] transition-all duration-300" type="submit">
+            Sign In
+          </button>
+</form>
+<!-- Secondary CTA -->
+<div class="mt-8 pt-8 border-t border-outline-variant/10 text-center">
+<p class="text-on-surface-variant text-sm font-body">
+            New to the platform? 
+            <a class="text-primary font-semibold hover:underline decoration-primary/30 underline-offset-4 transition-all ml-1" href="#">Create Account</a>
+</p>
+</div>
+</div>
+<!-- Trust Indicator -->
+<div class="mt-12 flex justify-center items-center gap-8 opacity-40 grayscale group">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-lg" data-weight="fill" style="font-variation-settings: 'FILL' 1;">security</span>
+<span class="font-label text-[0.6875rem] uppercase tracking-widest">SOC2 TYPE II</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-lg" data-weight="fill" style="font-variation-settings: 'FILL' 1;">lock</span>
+<span class="font-label text-[0.6875rem] uppercase tracking-widest">AES-256</span>
+</div>
+</div>
+</div>
+<!-- Decorative Illustration Background Element -->
+<div class="absolute right-[-5%] top-[20%] opacity-20 pointer-events-none hidden lg:block">
+<div class="w-96 h-96 rounded-full border border-primary/20 flex items-center justify-center p-12">
+<div class="w-full h-full rounded-full border border-primary/40 flex items-center justify-center p-12">
+<div class="w-full h-full rounded-full border border-primary/60 flex items-center justify-center">
+<span class="material-symbols-outlined text-8xl text-primary/80">psychology</span>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer per JSON Specification -->
+<footer class="w-full border-t border-slate-900 bg-slate-950 flex flex-col md:flex-row justify-between items-center px-12 py-8 w-full">
+<div class="mb-4 md:mb-0">
+<div class="text-lg font-headline text-slate-100">VibeAnalytix</div>
+<p class="font-label text-xs uppercase tracking-widest text-slate-500 mt-1">© 2024 VibeAnalytix. Neural Precision Engineering.</p>
+</div>
+<div class="flex gap-6">
+<a class="font-label text-xs uppercase tracking-widest text-slate-500 hover:text-violet-300 transition-colors" href="#">Security Architecture</a>
+<a class="font-label text-xs uppercase tracking-widest text-slate-500 hover:text-violet-300 transition-colors" href="#">SOC2 Compliance</a>
+<a class="font-label text-xs uppercase tracking-widest text-slate-500 hover:text-violet-300 transition-colors" href="#">Technical Journal</a>
+<a class="font-label text-xs uppercase tracking-widest text-slate-500 hover:text-violet-300 transition-colors" href="#">API Docs</a>
+</div>
+</footer>
+</body></html>
