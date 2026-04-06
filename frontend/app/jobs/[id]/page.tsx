@@ -6,25 +6,41 @@ import { useAppStore } from '@/lib/store'
 import { ArrowLeft, RefreshCw, AlertCircle, ChevronRight, ChevronDown, LogOut } from 'lucide-react'
 import MarkdownRenderer from '@/components/MarkdownRenderer'
 
-// Build a tree from a flat list of file paths (e.g. ["src/api/index.ts", "src/utils.ts"])
-function buildFileTree(paths: string[]): any {
+// Build a tree from a flat list of file paths.
+// Handles both / and \ separators and strips any leading temp/absolute prefix.
+function normalizePath(p: string): string {
+  // Replace backslashes
+  let s = p.replace(/\\/g, '/')
+  // Strip anything before the first recognizable project segment
+  // (keeps e.g. "src/api/index.ts" or "backend/app/routes.py")
+  const prefixRe = /^(?:[A-Za-z]:|\/tmp\/[^/]+\/|\/var\/|\/home\/[^/]+\/)[^/]*\//
+  s = s.replace(prefixRe, '')
+  // Remove leading slashes
+  s = s.replace(/^\/+/, '')
+  return s
+}
+
+function buildFileTree(rawPaths: string[]): any {
   const root: any = { name: '(root)', path: '', is_dir: true, children: [] }
-  for (const p of paths) {
+  for (const raw of rawPaths) {
+    const p = normalizePath(raw)
+    if (!p) continue
     const parts = p.split('/')
     let node = root
     for (let i = 0; i < parts.length; i++) {
       const part = parts[i]
+      if (!part) continue
       const isLast = i === parts.length - 1
       const fullPath = parts.slice(0, i + 1).join('/')
       let child = node.children.find((c: any) => c.name === part)
       if (!child) {
-        child = { name: part, path: fullPath, is_dir: !isLast, children: [] }
+        child = { name: part, path: isLast ? raw : fullPath, is_dir: !isLast, children: [] }
         node.children.push(child)
       }
       if (!isLast) node = child
     }
   }
-  // Sort: dirs first, then files
+  // Sort: dirs first, then files, both alphabetically
   const sortNode = (n: any) => {
     if (n.children) {
       n.children.sort((a: any, b: any) => {
