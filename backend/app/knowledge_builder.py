@@ -530,11 +530,11 @@ async def generate_and_store_embeddings(
                 if settings.gemini_api_key:
                     # Gemini embedding generation
                     response_embed = await genai.embed_content_async(
-                        model="models/text-embedding-004",
+                        model="text-embedding-004",
                         content=text,
                         task_type="retrieval_document",
                     )
-                    embedding = response_embed['embedding']
+                    embedding = response_embed['embedding'].values
                 else:
                     # OpenAI embedding generation
                     response = await client.embeddings.create(

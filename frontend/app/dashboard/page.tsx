@@ -17,13 +17,23 @@ export default function SubmissionPage() {
 
     if (!isLoading && isAuthenticated) {
       getAllJobs().then(data => {
-        const formatted = data.slice(0, 3).map((j: any) => ({
-          id: j.job_id,
-          name: j.github_url ? j.github_url.split('/').pop() : 'Project Archive',
-          status: j.status,
-          progress: j.progress_pct,
-          updated_at: new Date(j.updated_at).toLocaleDateString()
-        }));
+        const formatted = data.slice(0, 3).map((j: any) => {
+          let displayName = 'Project Archive';
+          if (j.source_type === 'github' && j.source_ref) {
+            const parts = j.source_ref.replace(/\/$/, '').split('/');
+            displayName = parts.pop() || 'Repository';
+          } else if (j.source_type === 'zip' && j.source_ref) {
+             displayName = j.source_ref.slice(0, 20) + (j.source_ref.length > 20 ? '...' : '');
+          }
+          
+          return {
+            id: j.job_id,
+            name: displayName,
+            status: j.status,
+            progress: j.progress_pct,
+            updated_at: new Date(j.updated_at).toLocaleDateString()
+          };
+        });
         setRecentJobs(formatted);
       }).catch(console.error);
     }

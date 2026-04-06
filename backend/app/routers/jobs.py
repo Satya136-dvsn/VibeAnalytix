@@ -247,6 +247,8 @@ async def get_user_jobs(
     return [
         JobStatusResponse(
             job_id=job.id,
+            source_type=job.source_type,
+            source_ref=job.source_ref,
             status=job.status,
             current_stage=job.current_stage,
             progress_pct=job.progress_pct,
@@ -307,6 +309,8 @@ async def get_job_status(
 
     return JobStatusResponse(
         job_id=job.id,
+        source_type=job.source_type,
+        source_ref=job.source_ref,
         status=job.status,
         current_stage=job.current_stage,
         progress_pct=job.progress_pct,
@@ -388,6 +392,8 @@ async def get_job_results(
 
     return JobResultsResponse(
         job_id=job.id,
+        source_type=job.source_type,
+        source_ref=job.source_ref,
         status=job.status,
         explanations=explanations,
     )
@@ -514,11 +520,11 @@ async def chat_with_repo(
         if gemini_mode:
             genai.configure(api_key=settings.gemini_api_key)
             response = await genai.embed_content_async(
-                model="models/text-embedding-004",
+                model="text-embedding-004",
                 content=request.query[:8000],
                 task_type="retrieval_query",
             )
-            query_embedding = response['embedding']
+            query_embedding = response['embedding'].values
         else:
             client = AsyncOpenAI(api_key=settings.openai_api_key)
             response = await client.embeddings.create(

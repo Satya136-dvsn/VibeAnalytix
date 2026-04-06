@@ -164,6 +164,16 @@ export default function JobResultsPage() {
     }
   }
 
+  const getProjectName = (job: any) => {
+    if (!job) return 'Neural Analysis'
+    const ref = job.source_ref || ''
+    if (job.source_type === 'github') {
+      const parts = ref.replace(/\/$/, '').split('/')
+      return parts[parts.length - 1]
+    }
+    return 'ZIP Upload'
+  }
+
   const handleRetry = async () => {
     try {
       setLoading(true)
@@ -279,16 +289,36 @@ export default function JobResultsPage() {
                 <button onClick={() => router.push('/')} className="text-on-surface-variant hover:text-primary transition-colors flex items-center pr-2 border-r border-outline-variant/20">
                   <ArrowLeft size={20} />
                 </button>
-                <h1 className="text-3xl font-headline text-on-background">Job ID: {jobId.slice(0, 8)}...</h1>
+                <h1 className="text-3xl font-headline text-on-background"> {getProjectName(results || status)}</h1>
                 
-                {status && status.status === 'completed' && <span className="badge-success">Completed</span>}
-                {status && status.status === 'failed' && <span className="badge-error">Failed</span>}
-                {status && status.status === 'in_progress' && <span className="badge-pending animate-pulse">In Progress</span>}
+                {status && (
+                  <div className="flex items-center gap-2">
+                    {status.status === 'completed' && <span className="badge-success">Completed</span>}
+                    {status.status === 'failed' && <span className="badge-error">Failed</span>}
+                    {status.status === 'in_progress' && <span className="badge-pending animate-pulse">In Progress</span>}
+                  </div>
+                )}
               </div>
-              {status && <p className="text-on-surface-variant text-sm mt-1">Stage: {status.current_stage || 'Initializing...'}</p>}
+              <div className="flex items-center gap-4 mt-1">
+                {status && <p className="text-on-surface-variant text-sm border-r border-outline-variant/20 pr-4">Stage: {status.current_stage || 'Initializing...'}</p>}
+                {status?.source_type === 'github' && (
+                  <a href={status.source_ref} target="_blank" rel="noreferrer" className="text-[10px] text-primary uppercase tracking-widest hover:underline flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[14px]">link</span>
+                    Source Registry
+                  </a>
+                )}
+              </div>
             </div>
             
-            <div className="flex gap-2">
+            <div className="flex gap-3">
+              <button 
+                onClick={handleRetry}
+                className="btn-secondary px-4 py-2 text-xs flex items-center gap-2 border-primary/20 hover:bg-primary/5 text-primary" 
+                title="Refresh analysis with latest repo state"
+              >
+                <span className="material-symbols-outlined text-[18px]">sync</span>
+                Re-analyze
+              </button>
               <button className="bg-surface-container-highest p-2 rounded-lg text-on-surface-variant hover:text-on-background transition-colors active:scale-95">
                 <span className="material-symbols-outlined">share</span>
               </button>
