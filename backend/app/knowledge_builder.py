@@ -71,6 +71,8 @@ class KnowledgeGraph:
     file_summaries: list[FileSummary] = field(default_factory=list)
     module_summaries: list[ModuleSummary] = field(default_factory=list)
     project_summary: Optional[ProjectSummary] = None
+    parsed_files: list = field(default_factory=list)  # Keep source code available for explanation engine
+    analysis: Optional[object] = None  # Keep analysis result available
 
 
 class KnowledgeBuilder:
@@ -461,6 +463,8 @@ Module Summaries:
             file_summaries=self.file_summaries,
             module_summaries=self.module_summaries,
             project_summary=project_summary,
+            parsed_files=self.parsed_files,
+            analysis=self.analysis,
         )
 
 

@@ -579,17 +579,30 @@ class ExplanationEngine:
     async def generate_per_file_explanations_with_context(
         self, knowledge: KnowledgeGraph, context: str
     ) -> dict[str, str]:
-        """Generate per-file explanations with pre-built context."""
+        """Generate per-file explanations with pre-built context, including actual source code."""
         explanations: dict[str, str] = {}
 
+        # Build a lookup map: file_path -> source code
+        source_map: dict[str, str] = {}
+        if hasattr(knowledge, 'parsed_files') and knowledge.parsed_files:
+            for pf in knowledge.parsed_files:
+                try:
+                    src = pf.source or ''
+                    if isinstance(src, bytes):
+                        src = src.decode('utf-8', errors='replace')
+                    source_map[pf.path] = src
+                except Exception:
+                    source_map[pf.path] = ''
+
         system_prompt = (
-            "You are a world-class senior developer writing crystal-clear technical documentation. "
-            "For each source file, write a deeply detailed, structured explanation formatted in Markdown. "
-            "Use headings (###), bullet points, inline code (` `), and bold text. "
-            "Do NOT produce generic filler text — be specific and reference actual function names, "
-            "class names, arguments, and line numbers from the data provided. "
-            "A junior developer reading your documentation should understand exactly what this file "
-            "does without opening it."
+            "You are a world-class senior developer writing an exhaustive, educational code walkthrough. "
+            "When given a source file and its functions, you produce a complete technical explanation "
+            "formatted in clean Markdown that lets ANY developer — even a complete beginner — fully "
+            "understand the file WITHOUT opening it. "
+            "Use ##, ###, bullet lists, inline `code`, and fenced code blocks. "
+            "Be extremely specific: quote actual function signatures, variable names, class attributes, "
+            "and line numbers from the code provided. Never write vague or generic text. "
+            "Minimum target: 400 words per file."
         )
 
         for file_summary in knowledge.file_summaries:
@@ -602,27 +615,47 @@ class ExplanationEngine:
                 for fn in file_functions
             )
 
+            # Include up to 8000 chars of real source code
+            raw_source = source_map.get(file_summary.file_path, '')
+            source_snippet = raw_source[:8000] if raw_source else '(source not available)'
+            if len(raw_source) > 8000:
+                source_snippet += f"\n\n... (file truncated, {len(raw_source)} chars total)"
+
             user_prompt = (
-                f"Write a DETAILED EXPLANATION for the file: `{file_summary.file_path}`\n\n"
-                f"**AI-generated file summary:** {file_summary.summary_text or 'Not available'}\n\n"
-                f"**Functions & methods detected:**\n{func_details or 'None detected'}\n\n"
-                f"**Overall project context:**\n{context[:3000]}\n\n"
-                "Your explanation MUST include these sections:\n\n"
-                "### 📄 File Overview\n"
-                "In 3-5 sentences, explain this file's SPECIFIC role and responsibility within the project. "
-                "Be concrete — what would break if this file didn't exist?\n\n"
-                "### 🔧 Functions & Classes Explained\n"
-                "For EACH function/class listed above, provide:\n"
-                "- Its purpose in 1-2 sentences\n"
-                "- What parameters it accepts and what it returns\n"
-                "- Any important side effects, exceptions, or edge cases\n\n"
-                "### 🔗 How It Connects\n"
-                "Which other files/modules does this file import from or export to? "
-                "What is its position in the call chain (e.g., called by X, calls Y)?\n\n"
-                "### 💡 Key Implementation Details\n"
-                "Highlight any non-obvious logic, important design decisions, or patterns a developer must know "
-                "before modifying this file.\n\n"
-                "Be specific — avoid generic phrases. Aim for at least 200 words."
+                f"## File to explain: `{file_summary.file_path}`\n\n"
+                f"**Auto-generated summary:** {file_summary.summary_text or 'Not available'}\n\n"
+                f"**Detected functions/classes:**\n{func_details or 'None detected'}\n\n"
+                f"**Actual source code:**\n```\n{source_snippet}\n```\n\n"
+                f"**Overall project context (abbreviated):**\n{context[:2000]}\n\n"
+                "---\n"
+                "Write a COMPLETE, DETAILED explanation of this file covering ALL of the following sections:\n\n"
+                "## 📄 File Purpose\n"
+                "What is the exact role of this file? What would break in the system if this file were deleted? "
+                "State this in 3–5 clear sentences.\n\n"
+                "## 🔧 Complete Function & Class Reference\n"
+                "For **every** function, class, and method visible in the source code above:\n"
+                "- Write its **full signature** (name + parameters + return type if visible)\n"
+                "- Explain what it does in 2–4 sentences\n"
+                "- List its parameters with their types and what they represent\n"
+                "- Describe what it returns or what side-effect it produces\n"
+                "- Note any exceptions raised, edge cases, or important constraints\n\n"
+                "## 🔗 Imports & Dependencies\n"
+                "List every import in this file. For each:\n"
+                "- What module/package is it from?\n"
+                "- What specifically is imported and why is it needed?\n\n"
+                "## ⚙️ Implementation Deep-Dive\n"
+                "Walk through the most interesting or complex parts of the implementation:\n"
+                "- Any non-obvious algorithms or logic\n"
+                "- Design patterns used (e.g. factory, singleton, decorator, context manager)\n"
+                "- Any async/await patterns or concurrency concerns\n"
+                "- Any configuration values, constants, or environment variables used\n\n"
+                "## 🧪 How to Use / Interact With This File\n"
+                "Give a concrete example of how another developer would call or use the main functions/classes "
+                "in this file. Show example call signatures with plausible argument values.\n\n"
+                "## 💡 Key Gotchas & Things to Know\n"
+                "What are 3–5 things a developer MUST know before modifying this file? "
+                "Include any hidden coupling, performance concerns, or things that are easy to break.\n\n"
+                "Be exhaustive. Reference actual line numbers, variable names, and code from the source above."
             )
 
             async def _create_for_file(prompt=user_prompt):
@@ -641,6 +674,7 @@ class ExplanationEngine:
                 continue
 
         return explanations
+
 
     async def generate_execution_flow_with_context(
         self, knowledge: KnowledgeGraph, context: str

@@ -6,6 +6,38 @@ import { useAppStore } from '@/lib/store'
 import { ArrowLeft, RefreshCw, AlertCircle, ChevronRight, ChevronDown, LogOut } from 'lucide-react'
 import MarkdownRenderer from '@/components/MarkdownRenderer'
 
+// Build a tree from a flat list of file paths (e.g. ["src/api/index.ts", "src/utils.ts"])
+function buildFileTree(paths: string[]): any {
+  const root: any = { name: '(root)', path: '', is_dir: true, children: [] }
+  for (const p of paths) {
+    const parts = p.split('/')
+    let node = root
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i]
+      const isLast = i === parts.length - 1
+      const fullPath = parts.slice(0, i + 1).join('/')
+      let child = node.children.find((c: any) => c.name === part)
+      if (!child) {
+        child = { name: part, path: fullPath, is_dir: !isLast, children: [] }
+        node.children.push(child)
+      }
+      if (!isLast) node = child
+    }
+  }
+  // Sort: dirs first, then files
+  const sortNode = (n: any) => {
+    if (n.children) {
+      n.children.sort((a: any, b: any) => {
+        if (a.is_dir !== b.is_dir) return a.is_dir ? -1 : 1
+        return a.name.localeCompare(b.name)
+      })
+      n.children.forEach(sortNode)
+    }
+  }
+  sortNode(root)
+  return root
+}
+
 interface FileTreeNodeProps {
   node: any
   selectedFile: string | null
@@ -312,20 +344,17 @@ export default function JobResultsPage() {
               <div className="w-full md:w-80 flex-shrink-0 card p-4 flex flex-col gap-2 h-full max-h-[80vh] overflow-y-auto">
                 <h3 className="section-label px-2 mb-2">Repository Structure</h3>
                 <div className="bg-surface-container-lowest rounded-xl p-2 border border-outline-variant/5">
-                  {results.explanations.file_tree ? (
-                    <FileTreeNodeComponent node={results.explanations.file_tree} selectedFile={selectedFile} onSelectFile={setSelectedFile} />
-                  ) : results.explanations.per_file_explanations ? (
-                    <div className="space-y-0.5">
-                      {Object.keys(results.explanations.per_file_explanations).map((fp: string) => (
-                        <button key={fp} onClick={() => setSelectedFile(fp)} className={selectedFile === fp ? 'tree-item-active' : 'tree-item'}>
-                          <span className="material-symbols-outlined text-[18px]">description</span>
-                          <span className="truncate">{fp}</span>
-                        </button>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-on-surface-variant p-3 italic">No structural data acquired.</p>
-                  )}
+                  {(() => {
+                    // Prefer API-provided file_tree, otherwise build one from per_file_explanations keys
+                    const tree = results.explanations.file_tree ||
+                      (results.explanations.per_file_explanations
+                        ? buildFileTree(Object.keys(results.explanations.per_file_explanations))
+                        : null)
+                    if (!tree) return <p className="text-sm text-on-surface-variant p-3 italic">No structural data acquired.</p>
+                    // If root has only one child dir, render that child directly
+                    const renderRoot = (tree.children?.length === 1 && tree.children[0].is_dir) ? tree.children[0] : tree
+                    return <FileTreeNodeComponent node={renderRoot} selectedFile={selectedFile} onSelectFile={setSelectedFile} />
+                  })()}
                 </div>
               </div>
 
