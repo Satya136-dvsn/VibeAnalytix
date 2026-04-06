@@ -146,7 +146,7 @@ class ExplanationEngine:
             prompt = f"{system_prompt}\n\n{user_prompt}"
             response = await self.gemini_model.generate_content_async(
                 prompt,
-                generation_config=genai.types.GenerationConfig(temperature=0.3)
+                generation_config=genai.types.GenerationConfig(temperature=0.3, max_output_tokens=4096)
             )
             return response.text
         else:
@@ -157,7 +157,7 @@ class ExplanationEngine:
                     {"role": "user", "content": user_prompt},
                 ],
                 temperature=0.3,
-                max_tokens=2000,
+                max_tokens=4096,
             )
             return response.choices[0].message.content or ""
 
@@ -529,24 +529,44 @@ class ExplanationEngine:
     ) -> Optional[str]:
         """Generate project overview with pre-built context."""
         system_prompt = (
-            "You are a code documentation expert. Generate a clear, structured, "
-            "beginner-friendly project overview. Include: purpose, architecture, "
-            "key technologies, and how the components fit together. "
-            "Write in plain English at a level understandable by an entry-level developer."
+            "You are a world-class senior software architect writing comprehensive technical documentation. "
+            "Your goal is to produce a deeply detailed, easy-to-read, well-structured project report "
+            "formatted in clean Markdown. Imagine you are explaining this codebase to a new developer "
+            "who has never seen it before — every section should be crystal clear with zero ambiguity. "
+            "Use headings (##, ###), bullet points, bold text, and code blocks (` `) liberally. "
+            "Do NOT use raw asterisks as literal text — only use markdown formatting as proper syntax. "
+            "Do NOT be vague or generic. Reference specific files, functions, and patterns you see in the data."
         )
 
         user_prompt = (
-            "Based on the following code analysis, generate a comprehensive project overview:\n\n"
+            "Based on the following deep code analysis data, produce a COMPREHENSIVE PROJECT REPORT. "
+            "Be as detailed and specific as possible — minimum 600 words. \n\n"
             f"{context}\n\n"
-            "Include sections for:\n"
-            "1. Project Purpose - What does this project do?\n"
-            "2. Architecture - How is the code organized?\n"
-            "3. Key Technologies - What languages, frameworks, and libraries are used?\n"
-            "4. Key Components - What are the main modules and their responsibilities?"
+            "Your report MUST include ALL of the following sections, in this order:\n\n"
+            "## 🎯 Project Purpose & Problem Statement\n"
+            "What real-world problem does this project solve? Who is the intended user? What is the core value proposition?\n\n"
+            "## 🏗️ System Architecture\n"
+            "Describe the overall architectural pattern (e.g., MVC, microservices, monolith, event-driven). "
+            "What are the main layers and how do they communicate? Include a text-based architecture diagram if helpful.\n\n"
+            "## 🛠️ Technology Stack\n"
+            "List every language, framework, library, and tool detected. For each, briefly explain WHY it is used in this project.\n\n"
+            "## 📁 Key Modules & Their Responsibilities\n"
+            "For each significant module/directory, explain in 2-4 sentences what it does, what it owns, and "
+            "how it interacts with the rest of the system. Reference specific files.\n\n"
+            "## ⚙️ Core Functionality Breakdown\n"
+            "List the top 5-8 most important features or behaviors of the system. For each feature, "
+            "explain HOW the code implements it — name the key functions and files involved.\n\n"
+            "## 🔗 Data Flow & Integration Points\n"
+            "Trace how data enters, moves through, and exits the system. Where is state held? "
+            "What APIs or databases are integrated?\n\n"
+            "## ⚠️ Notable Patterns & Design Decisions\n"
+            "Identify any interesting design patterns (factory, singleton, observer, etc.), "
+            "unusual architectural choices, or things a new developer should pay special attention to.\n\n"
+            "Remember: Be specific, reference actual files and functions from the data above, and write at minimum 600 words."
         )
 
         async def _create():
-            return await self._call_openai_structured(system_prompt, user_prompt)
+            return await self._call_openai(system_prompt, user_prompt)
 
         try:
             return await self._retry_with_backoff(_create)
@@ -563,11 +583,13 @@ class ExplanationEngine:
         explanations: dict[str, str] = {}
 
         system_prompt = (
-            "You are a code documentation expert. Generate a clear, "
-            "beginner-friendly explanation for a specific source file. "
-            "Describe its role in the project, key functions/classes, "
-            "and relationships to other files. "
-            "Write in plain English at a level understandable by an entry-level developer."
+            "You are a world-class senior developer writing crystal-clear technical documentation. "
+            "For each source file, write a deeply detailed, structured explanation formatted in Markdown. "
+            "Use headings (###), bullet points, inline code (` `), and bold text. "
+            "Do NOT produce generic filler text — be specific and reference actual function names, "
+            "class names, arguments, and line numbers from the data provided. "
+            "A junior developer reading your documentation should understand exactly what this file "
+            "does without opening it."
         )
 
         for file_summary in knowledge.file_summaries:
@@ -575,24 +597,36 @@ class ExplanationEngine:
                 fn for fn in knowledge.function_summaries
                 if fn.file_path == file_summary.file_path
             ]
-            func_list = "\n".join(
-                f"  - `{fn.function_name}` (lines {fn.line_start}-{fn.line_end})"
+            func_details = "\n".join(
+                f"  - `{fn.function_name}` (lines {fn.line_start}–{fn.line_end}): {fn.summary_text or 'no summary'}"
                 for fn in file_functions
             )
 
             user_prompt = (
-                f"Generate an explanation for the file: **{file_summary.file_path}**\n\n"
-                f"File summary: {file_summary.summary_text or 'N/A'}\n\n"
-                f"Functions in this file:\n{func_list or 'No functions detected'}\n\n"
-                f"Project context:\n{context[:2000]}\n\n"
-                "Explain:\n"
-                "1. What this file does\n"
-                "2. Key functions and their purposes\n"
-                "3. How it relates to other parts of the project"
+                f"Write a DETAILED EXPLANATION for the file: `{file_summary.file_path}`\n\n"
+                f"**AI-generated file summary:** {file_summary.summary_text or 'Not available'}\n\n"
+                f"**Functions & methods detected:**\n{func_details or 'None detected'}\n\n"
+                f"**Overall project context:**\n{context[:3000]}\n\n"
+                "Your explanation MUST include these sections:\n\n"
+                "### 📄 File Overview\n"
+                "In 3-5 sentences, explain this file's SPECIFIC role and responsibility within the project. "
+                "Be concrete — what would break if this file didn't exist?\n\n"
+                "### 🔧 Functions & Classes Explained\n"
+                "For EACH function/class listed above, provide:\n"
+                "- Its purpose in 1-2 sentences\n"
+                "- What parameters it accepts and what it returns\n"
+                "- Any important side effects, exceptions, or edge cases\n\n"
+                "### 🔗 How It Connects\n"
+                "Which other files/modules does this file import from or export to? "
+                "What is its position in the call chain (e.g., called by X, calls Y)?\n\n"
+                "### 💡 Key Implementation Details\n"
+                "Highlight any non-obvious logic, important design decisions, or patterns a developer must know "
+                "before modifying this file.\n\n"
+                "Be specific — avoid generic phrases. Aim for at least 200 words."
             )
 
             async def _create_for_file(prompt=user_prompt):
-                return await self._call_openai_structured(system_prompt, prompt)
+                return await self._call_openai(system_prompt, prompt)
 
             try:
                 explanation = await self._retry_with_backoff(_create_for_file)
@@ -619,27 +653,42 @@ class ExplanationEngine:
                 entry_points_info = f"\nIdentified entry points: {', '.join(entry_points)}"
 
         system_prompt = (
-            "You are a code documentation expert. Generate a clear, "
-            "beginner-friendly execution flow narrative. Explain how the program "
-            "starts, what happens step by step, how it processes input, and how "
-            "it produces output. Write as a narrative that an entry-level developer "
-            "can follow."
+            "You are a world-class systems engineer explaining how a complex codebase executes. "
+            "Write a deeply detailed, step-by-step execution flow narrative formatted in clean Markdown. "
+            "Use numbered sections, bullet points, inline code snippets (` `), and bold text. "
+            "Be concrete — name the actual files and functions involved at each step. "
+            "A developer unfamiliar with this codebase should be able to trace execution completely from your writeup."
         )
 
         user_prompt = (
-            f"Based on the following code analysis, describe the execution flow:\n\n"
+            "Based on the following code analysis, produce a COMPREHENSIVE EXECUTION FLOW ANALYSIS. "
+            "Minimum 400 words. Be specific and reference actual files/functions.\n\n"
             f"{context}\n"
             f"{entry_points_info}\n\n"
-            "Describe:\n"
-            "1. How the program starts (entry point)\n"
-            "2. The initialization sequence\n"
-            "3. How user input/requests are processed\n"
-            "4. How data flows through the system\n"
-            "5. How output is produced"
+            "Structure your response with these sections:\n\n"
+            "## 🚀 Application Entry Points\n"
+            "What file(s) and function(s) are the starting point(s)? How does the process begin "
+            "(e.g., CLI invocation, HTTP server, event loop start)?\n\n"
+            "## ⚙️ Initialization & Bootstrap Sequence\n"
+            "Walk through everything that happens at startup — config loading, database connections, "
+            "service registrations, middleware setup — step by step.\n\n"
+            "## 📨 Request / Event Processing Pipeline\n"
+            "For the primary user-facing workflow (e.g., an HTTP request, a job submission, a command), "
+            "trace the full execution path: which function is called first, what it does, what it calls next, "
+            "and so on through every layer.\n\n"
+            "## 💾 Data Layer Interactions\n"
+            "When and how does this application read from or write to databases, caches, or external APIs? "
+            "Name the specific functions and files responsible.\n\n"
+            "## 📤 Output & Response Generation\n"
+            "How does the system produce its final output or response? What transformations happen to data "
+            "before it reaches the caller?\n\n"
+            "## ♻️ Background Jobs & Async Patterns\n"
+            "Are there worker queues, async tasks, or scheduled jobs? If so, explain when they fire and what they do.\n\n"
+            "Remember: Name actual files and functions at every step."
         )
 
         async def _create():
-            return await self._call_openai_structured(system_prompt, user_prompt)
+            return await self._call_openai(system_prompt, user_prompt)
 
         try:
             return await self._retry_with_backoff(_create)

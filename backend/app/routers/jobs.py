@@ -22,6 +22,8 @@ from app.schemas import (
     JobResultsResponse,
     ErrorResponse,
     ExplanationSet,
+    ChatRequest,
+    ChatResponse,
 )
 from app.tasks import run_pipeline
 from app.celery_app import celery_app
@@ -467,3 +469,123 @@ async def retry_job(
         job_id=new_job.id,
         status="queued",
     )
+
+
+@router.post(
+    "/{job_id}/chat",
+    response_model=ChatResponse,
+    responses={
+        401: {"model": ErrorResponse},
+        403: {"model": ErrorResponse},
+        404: {"model": ErrorResponse},
+    },
+)
+async def chat_with_repo(
+    job_id: str,
+    request: ChatRequest,
+    user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> ChatResponse:
+    """
+    Ask a question about the analyzed codebase using semantic vector search.
+    """
+    from app.vector_store import semantic_retrieval
+    from app.config import settings
+    import google.generativeai as genai
+    from openai import AsyncOpenAI
+
+    # Find job
+    stmt = select(Job).where(Job.id == UUID(job_id))
+    result = await session.execute(stmt)
+    job = result.scalar_one_or_none()
+
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    if job.user_id != user.id:
+        raise HTTPException(status_code=403, detail="Access denied")
+        
+    if job.status != "completed":
+        raise HTTPException(status_code=400, detail="Job must be completed to chat")
+
+    try:
+        # Generate query embedding
+        gemini_mode = bool(settings.gemini_api_key)
+        if gemini_mode:
+            genai.configure(api_key=settings.gemini_api_key)
+            response = await genai.embed_content_async(
+                model="models/text-embedding-004",
+                content=request.query[:8000],
+                task_type="retrieval_query",
+            )
+            query_embedding = response['embedding']
+        else:
+            client = AsyncOpenAI(api_key=settings.openai_api_key)
+            response = await client.embeddings.create(
+                model="text-embedding-3-small",
+                input=request.query[:8000],
+            )
+            query_embedding = response.data[0].embedding
+
+        # Retrieve top 5 similar functions
+        top_functions = await semantic_retrieval(
+            session=session,
+            job_id=job.id,
+            query_embedding=query_embedding,
+            top_k=5,
+        )
+
+        sources = []
+        context_parts = []
+        for fn in top_functions:
+            sources.append({
+                "file": fn.file_path,
+                "function": fn.function_name,
+                "summary": fn.summary_text
+            })
+            context_parts.append(
+                f"File: {fn.file_path}\n"
+                f"Function: {fn.function_name} (Lines {fn.line_start}-{fn.line_end})\n"
+                f"Summary: {fn.summary_text}"
+            )
+
+        context_str = "\n\n".join(context_parts)
+        
+        system_prompt = (
+            "You are a helpful senior developer analyzing a codebase. "
+            "Use the provided context snippets from the codebase to answer the user's question. "
+            "If the context is insufficient, explain what you can infer, but don't invent code."
+        )
+        user_prompt = f"Context from codebase:\n{context_str}\n\nQuestion: {request.query}"
+
+        # Get answer
+        if gemini_mode:
+            model = genai.GenerativeModel("gemini-1.5-flash")
+            full_prompt = f"{system_prompt}\n\n{user_prompt}"
+            chat_response = await model.generate_content_async(
+                full_prompt,
+                generation_config=genai.types.GenerationConfig(temperature=0.3)
+            )
+            answer = chat_response.text
+        else:
+            chat_response = await client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
+                temperature=0.3,
+            )
+            answer = chat_response.choices[0].message.content
+
+        return ChatResponse(answer=answer, sources=sources)
+
+    except Exception as e:
+        import logging
+        logging.error(f"Chat error: {e}")
+        # Return graceful degradation if AI fails
+        return ChatResponse(
+            answer=f"I couldn't process your request dynamically due to: {str(e)} However, based on the repository structure, try manually inspecting the files mentioned in your analysis overview.",
+            sources=[]
+        )
+

@@ -86,6 +86,18 @@ class JobResultsResponse(BaseModel):
     explanations: ExplanationSet
 
 
+class ChatRequest(BaseModel):
+    """Semantic search/chat request."""
+    query: str
+
+
+class ChatResponse(BaseModel):
+    """Semantic search/chat response."""
+    answer: str
+    sources: list[dict] = []
+
+
+
 # ============ Error Schemas ============
 
 

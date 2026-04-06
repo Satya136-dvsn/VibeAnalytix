@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { useAppStore } from '@/lib/store'
-import { ArrowLeft, RefreshCw, AlertCircle, ChevronRight, ChevronDown, FileText, Folder, FolderOpen, LogOut, CheckCircle2 } from 'lucide-react'
+import { ArrowLeft, RefreshCw, AlertCircle, ChevronRight, ChevronDown, LogOut } from 'lucide-react'
+import MarkdownRenderer from '@/components/MarkdownRenderer'
 
 interface FileTreeNodeProps {
   node: any
@@ -66,6 +67,12 @@ export default function JobResultsPage() {
   const [error, setError] = useState('')
   const [polling, setPolling] = useState(false)
   const [selectedFile, setSelectedFile] = useState<string | null>(null)
+  
+  // Chat States
+  const [isChatOpen, setIsChatOpen] = useState(false)
+  const [chatQuery, setChatQuery] = useState('')
+  const [chatHistory, setChatHistory] = useState<Array<{role: 'user' | 'assistant', content: string, sources?: any[]}>>([])
+  const [chatLoading, setChatLoading] = useState(false)
 
   useEffect(() => {
     if (isCheckingAuth) return
@@ -118,6 +125,27 @@ export default function JobResultsPage() {
     } catch (err: any) {
       setError(err.message || 'Failed to retry job')
       setLoading(false)
+    }
+  }
+
+  const handleChat = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!chatQuery.trim() || chatLoading) return
+
+    const query = chatQuery
+    setChatHistory(prev => [...prev, { role: 'user', content: query }])
+    setChatQuery('')
+    setChatLoading(true)
+
+    try {
+      const { api } = await import('@/lib/api')
+      const res = await api.chatWithRepo(jobId, query)
+      setChatHistory(prev => [...prev, { role: 'assistant', content: res.answer, sources: res.sources }])
+    } catch (err: any) {
+      console.error(err)
+      setChatHistory(prev => [...prev, { role: 'assistant', content: 'Neural engine communication failed. Cannot reach semantic store.' }])
+    } finally {
+      setChatLoading(false)
     }
   }
 
@@ -256,14 +284,11 @@ export default function JobResultsPage() {
           {/* ── Progressive rendering: Overview ──────────────────── */}
           {(status?.status === 'completed' || (status?.status === 'in_progress' && results?.explanations?.overview_explanation)) && results?.explanations?.overview_explanation && tab === 'overview' && (
             <div className="max-w-5xl mx-auto space-y-6">
-              
               <div className="card-elevated p-8 relative overflow-hidden bg-surface-container-low border-outline-variant/10">
                 <div className="relative z-10">
-                  <h2 className="text-2xl font-headline mb-4 italic text-on-surface">Neural Architecture Summary</h2>
-                  <p className="text-on-surface-variant leading-loose whitespace-pre-wrap">
-                    {results.explanations.overview_explanation}
-                  </p>
-                  
+                  <h2 className="text-2xl font-headline mb-6 italic text-on-surface border-b border-outline-variant/10 pb-4">Neural Architecture Report</h2>
+                  <MarkdownRenderer content={results.explanations.overview_explanation} />
+
                   {results.explanations.external_deps?.length > 0 && (
                     <div className="mt-8 border-t border-outline-variant/10 pt-6">
                        <h3 className="section-label mb-3">External Dependencies</h3>
@@ -277,7 +302,6 @@ export default function JobResultsPage() {
                 </div>
                 <div className="absolute right-0 top-0 w-1/3 h-full opacity-10 pointer-events-none bg-gradient-to-l from-primary/20 to-transparent"></div>
               </div>
-
             </div>
           )}
 
@@ -314,9 +338,7 @@ export default function JobResultsPage() {
                        <span className="section-label text-primary">Contextual Analysis</span>
                     </div>
                     <div className="p-8 overflow-y-auto flex-1">
-                      <div className="prose prose-invert max-w-none text-on-surface-variant leading-relaxed">
-                        <div dangerouslySetInnerHTML={{ __html: (getFileExplanation() || '').replace(/\n/g, '<br />') }}></div>
-                      </div>
+                      <MarkdownRenderer content={getFileExplanation() || '_No explanation available for this file._'} />
                     </div>
                   </>
                 ) : (
@@ -347,9 +369,7 @@ export default function JobResultsPage() {
                     </div>
                   )}
 
-                  <p className="text-on-surface-variant leading-loose whitespace-pre-wrap">
-                    {results.explanations.flow_explanation || 'Flow data pending mapping.'}
-                  </p>
+                  <MarkdownRenderer content={results.explanations.flow_explanation || '_Flow data pending mapping._'} />
 
                   {results.explanations.circular_deps?.length > 0 && (
                     <div className="mt-8 p-6 bg-error-container/20 border border-error/30 rounded-xl">
@@ -371,6 +391,94 @@ export default function JobResultsPage() {
           
         </div>
       </main>
+
+      {/* ── Chat Overlay ─────────────────────────────────────── */}
+      {status?.status === 'completed' && results && (
+        <div className={`fixed bottom-0 right-8 w-[450px] shadow-2xl transition-all duration-300 z-50 rounded-t-2xl border border-outline-variant/20 bg-surface/95 backdrop-blur-xl ${isChatOpen ? 'h-[600px] translate-y-0' : 'h-14 translate-y-0 cursor-pointer hover:bg-surface-container-high'}`}>
+          {/* Header */}
+          <div 
+            onClick={() => setIsChatOpen(!isChatOpen)}
+            className="h-14 px-5 flex items-center justify-between border-b border-outline-variant/10 rounded-t-2xl"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-primary to-primary-dim flex items-center justify-center shadow-lg shadow-primary/20">
+                <span className="material-symbols-outlined text-sm text-on-primary" style={{ fontVariationSettings: "'FILL' 1" }}>robot_2</span>
+              </div>
+              <h3 className="font-semibold text-on-surface">Neural Chat</h3>
+            </div>
+            <button className="text-on-surface-variant hover:text-on-surface">
+              <span className="material-symbols-outlined text-xl transition-transform duration-300 transform" style={{ rotate: isChatOpen ? '180deg' : '0deg' }}>
+                expand_less
+              </span>
+            </button>
+          </div>
+
+          {/* Chat Body */}
+          {isChatOpen && (
+            <div className="flex flex-col h-[calc(600px-56px)] bg-surface">
+              <div className="flex-1 overflow-y-auto p-5 space-y-6">
+                {chatHistory.length === 0 ? (
+                  <div className="h-full flex flex-col items-center justify-center text-center opacity-60 px-6">
+                    <span className="material-symbols-outlined text-5xl mb-4 text-primary">chat_bubble</span>
+                    <h4 className="font-headline text-lg text-on-surface mb-2">Ask about this repository</h4>
+                    <p className="text-sm text-on-surface-variant">The Neural Engine has indexed the codebase semantic vectors. You can ask anything.</p>
+                  </div>
+                ) : (
+                  chatHistory.map((msg, i) => (
+                    <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-[85%] rounded-2xl p-4 ${msg.role === 'user' ? 'bg-primary text-on-primary rounded-tr-sm' : 'bg-surface-container-low text-on-surface rounded-tl-sm border border-outline-variant/10 shadow-lg'}`}>
+                        <MarkdownRenderer content={msg.content} className="text-sm" />
+                        {msg.sources && msg.sources.length > 0 && (
+                          <div className="mt-4 pt-3 border-t border-outline-variant/20">
+                            <p className="text-[10px] uppercase tracking-widest text-primary mb-2 font-bold">Vector References</p>
+                            <div className="space-y-1">
+                              {msg.sources.map((s, idx) => (
+                                <div key={idx} className="bg-surface-container rounded p-2 flex items-center justify-between group">
+                                  <span className="text-xs font-mono text-tertiary truncate">{s.file.split('/').pop()}</span>
+                                  <span className="material-symbols-outlined text-[14px] text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity">open_in_new</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+                {chatLoading && (
+                  <div className="flex justify-start">
+                    <div className="bg-surface-container-low text-on-surface border border-outline-variant/10 rounded-2xl rounded-tl-sm p-4 flex gap-1 items-center">
+                      <span className="w-2 h-2 rounded-full bg-primary animate-bounce"></span>
+                      <span className="w-2 h-2 rounded-full bg-primary animate-bounce delay-75"></span>
+                      <span className="w-2 h-2 rounded-full bg-primary animate-bounce delay-150"></span>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              {/* Input Area */}
+              <div className="p-4 bg-surface-container-low border-t border-outline-variant/10">
+                <form onSubmit={handleChat} className="relative flex items-center">
+                  <input
+                    type="text"
+                    value={chatQuery}
+                    onChange={e => setChatQuery(e.target.value)}
+                    placeholder="Search neural vectors..."
+                    className="w-full bg-surface-container-highest border-none rounded-xl pl-4 pr-12 py-3 text-sm focus:ring-1 focus:ring-primary text-on-surface placeholder:text-on-surface-variant"
+                  />
+                  <button 
+                    type="submit" 
+                    disabled={chatLoading || !chatQuery.trim()}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-primary text-on-primary rounded-lg shadow-md disabled:bg-surface-container-highest disabled:text-on-surface-variant transition-all hover:brightness-110 active:scale-95"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">send</span>
+                  </button>
+                </form>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
