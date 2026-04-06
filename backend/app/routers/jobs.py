@@ -225,6 +225,38 @@ async def submit_job(
 
 
 @router.get(
+    "",
+    response_model=list[JobStatusResponse],
+    responses={
+        401: {"model": ErrorResponse},
+    },
+)
+async def get_user_jobs(
+    user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> list[JobStatusResponse]:
+    """
+    Get all jobs for current user, ordered by creation date descending.
+    """
+    stmt = select(Job).where(Job.user_id == user.id).order_by(Job.created_at.desc())
+    result = await session.execute(stmt)
+    jobs = result.scalars().all()
+    
+    return [
+        JobStatusResponse(
+            job_id=job.id,
+            status=job.status,
+            current_stage=job.current_stage,
+            progress_pct=job.progress_pct,
+            error_message=job.error_message,
+            created_at=job.created_at,
+            updated_at=job.updated_at,
+        )
+        for job in jobs
+    ]
+
+
+@router.get(
     "/{job_id}/status",
     response_model=JobStatusResponse,
     responses={

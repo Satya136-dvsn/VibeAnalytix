@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&amp;family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-fixed": "#a98fff",
+                        "surface-variant": "#242629",
+                        "primary-container": "#a98fff",
+                        "on-primary-fixed-variant": "#32008a",
+                        "inverse-primary": "#6834eb",
+                        "primary-fixed-dim": "#9c7eff",
+                        "error": "#ff6e84",
+                        "surface": "#0d0e10",
+                        "secondary-fixed": "#d7e4ec",
+                        "primary-dim": "#7e51ff",
+                        "inverse-surface": "#faf9fb",
+                        "primary": "#b6a0ff",
+                        "tertiary-fixed": "#00e3fd",
+                        "on-tertiary": "#005762",
+                        "outline-variant": "#47484a",
+                        "on-error-container": "#ffb2b9",
+                        "error-dim": "#d73357",
+                        "on-secondary-container": "#c5d2da",
+                        "on-tertiary-fixed": "#003840",
+                        "on-surface": "#fdfbfe",
+                        "inverse-on-surface": "#555557",
+                        "surface-container-highest": "#242629",
+                        "tertiary-container": "#00e3fd",
+                        "surface-bright": "#2b2c2f",
+                        "on-background": "#fdfbfe",
+                        "on-surface-variant": "#ababad",
+                        "on-primary-container": "#280072",
+                        "secondary-container": "#3c494f",
+                        "tertiary": "#81ecff",
+                        "on-secondary": "#47545a",
+                        "on-tertiary-container": "#004d57",
+                        "on-tertiary-fixed-variant": "#005762",
+                        "tertiary-dim": "#00d4ec",
+                        "secondary": "#d7e4ec",
+                        "error-container": "#a70138",
+                        "surface-container-lowest": "#000000",
+                        "background": "#0d0e10",
+                        "on-primary-fixed": "#000000",
+                        "outline": "#757578",
+                        "surface-container": "#181a1c",
+                        "on-error": "#490013",
+                        "secondary-fixed-dim": "#c9d6de",
+                        "tertiary-fixed-dim": "#00d4ec",
+                        "on-secondary-fixed": "#354147",
+                        "on-primary": "#340090",
+                        "surface-dim": "#0d0e10",
+                        "surface-container-low": "#121316",
+                        "on-secondary-fixed-variant": "#515d64",
+                        "surface-container-high": "#1e2022",
+                        "secondary-dim": "#c9d6de",
+                        "surface-tint": "#b6a0ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Newsreader"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .neural-glow {
+            box-shadow: 0px 20px 50px rgba(182, 160, 255, 0.08);
+        }
+        .ghost-border {
+            outline: 1px solid rgba(71, 72, 74, 0.15);
+        }
+        body {
+            background-color: #0d0e10;
+            color: #fdfbfe;
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="flex min-h-screen overflow-hidden">
+<!-- SideNavBar -->
+<aside class="hidden md:flex flex-col h-screen w-64 bg-[#121316] border-r border-[#47484a]/15 py-6 px-4 gap-8 shrink-0">
+<div class="flex items-center gap-3 px-2">
+<div class="w-8 h-8 rounded bg-primary-container flex items-center justify-center text-on-primary-container">
+<span class="material-symbols-outlined text-sm">hub</span>
+</div>
+<div>
+<h2 class="font-headline text-lg italic text-[#fdfbfe]">System Alpha</h2>
+<p class="font-label text-[10px] uppercase tracking-widest text-on-surface-variant">Production Cluster</p>
+</div>
+</div>
+<nav class="flex flex-col gap-1">
+<a class="flex items-center gap-3 px-3 py-2 text-[#d7e4ec]/50 hover:bg-[#242629]/50 hover:text-[#fdfbfe] transition-colors duration-200 rounded-md font-['Inter'] text-[13px] font-medium tracking-wide" href="#">
+<span class="material-symbols-outlined text-[20px]">folder</span>
+                Repositories
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 text-[#d7e4ec]/50 hover:bg-[#242629]/50 hover:text-[#fdfbfe] transition-colors duration-200 rounded-md font-['Inter'] text-[13px] font-medium tracking-wide" href="#">
+<span class="material-symbols-outlined text-[20px]">hub</span>
+                Dependencies
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 text-[#d7e4ec]/50 hover:bg-[#242629]/50 hover:text-[#fdfbfe] transition-colors duration-200 rounded-md font-['Inter'] text-[13px] font-medium tracking-wide" href="#">
+<span class="material-symbols-outlined text-[20px]">account_tree</span>
+                Execution
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 text-[#d7e4ec]/50 hover:bg-[#242629]/50 hover:text-[#fdfbfe] transition-colors duration-200 rounded-md font-['Inter'] text-[13px] font-medium tracking-wide" href="#">
+<span class="material-symbols-outlined text-[20px]">history</span>
+                Snapshots
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 text-[#b6a0ff] bg-[#242629] rounded-md font-semibold font-['Inter'] text-[13px] tracking-wide translate-x-1 duration-150" href="#">
+<span class="material-symbols-outlined text-[20px]">group</span>
+                Team
+            </a>
+</nav>
+<div class="mt-auto flex flex-col gap-1">
+<a class="flex items-center gap-3 px-3 py-2 text-[#d7e4ec]/50 hover:text-[#fdfbfe] font-['Inter'] text-[13px]" href="#">
+<span class="material-symbols-outlined text-[18px]">menu_book</span>
+                Docs
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 text-[#d7e4ec]/50 hover:text-[#fdfbfe] font-['Inter'] text-[13px]" href="#">
+<span class="material-symbols-outlined text-[18px]">contact_support</span>
+                Support
+            </a>
+</div>
+</aside>
+<main class="flex-1 flex flex-col h-screen overflow-y-auto bg-surface relative">
+<!-- TopAppBar -->
+<header class="sticky top-0 z-50 flex justify-between items-center w-full px-6 py-4 bg-[#0d0e10] shadow-[0px_20px_50px_rgba(182,160,255,0.08)]">
+<div class="flex items-center gap-8">
+<h1 class="font-headline text-xl italic font-bold text-[#fdfbfe]">Editorial Intelligence</h1>
+<nav class="hidden lg:flex items-center gap-6">
+<a class="text-[#d7e4ec]/60 hover:text-[#fdfbfe] transition-all duration-300 font-headline italic font-medium tracking-tight" href="#">Insights</a>
+<a class="text-[#d7e4ec]/60 hover:text-[#fdfbfe] transition-all duration-300 font-headline italic font-medium tracking-tight" href="#">Terminal</a>
+<a class="text-[#d7e4ec]/60 hover:text-[#fdfbfe] transition-all duration-300 font-headline italic font-medium tracking-tight" href="#">Flow</a>
+<a class="text-[#d7e4ec]/60 hover:text-[#fdfbfe] transition-all duration-300 font-headline italic font-medium tracking-tight" href="#">History</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative">
+<span class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-all cursor-pointer">notifications</span>
+<span class="absolute top-0 right-0 w-2 h-2 bg-primary rounded-full"></span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-all cursor-pointer">settings</span>
+<img alt="Lead Architect Profile" class="w-8 h-8 rounded-full border border-outline-variant/30" data-alt="Professional portrait of a senior developer with focused expression, soft cinematic lighting, neutral architectural background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDNWY64Qe02NI6V0ItTG_Fj8aB_jQb5Nrb9SCEuJkQY4Ihblhtyoz7YAy3MbuUO1uE2_UYKB71rsJKn_-LYbs68YGgKrrWIsQXko9A1sk2yJhUmC7eNFJbZ2Ls3M-B5ZjElzt_-zmA18Fnp2qMwvYVJElPDgGF470NWiojVgF9XVVB0sQ7PsI6Uf-CQqGtffdcemXeRfzIV7FaCLxuk93N6w4p9TMUmk4CcLLzX7xFWK1oLVodkaXiXYg1mMnoUzEbL_1UubAtsuRg"/>
+</div>
+</header>
+<!-- Content Canvas -->
+<div class="p-8 max-w-6xl mx-auto w-full space-y-12">
+<!-- Section: Project Identity -->
+<section class="space-y-6">
+<div class="border-l-2 border-primary pl-6">
+<h2 class="font-headline text-3xl italic text-on-surface">Settings &amp; Oversight</h2>
+<p class="text-on-surface-variant font-body mt-1">Configure the behavioral parameters for the System Alpha intelligence engine.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<!-- Repository Access Bento -->
+<div class="md:col-span-2 bg-surface-container-low rounded-xl p-6 ghost-border">
+<div class="flex justify-between items-start mb-6">
+<div>
+<h3 class="font-headline text-xl italic text-primary">Repository Access</h3>
+<p class="text-sm text-on-surface-variant">Manage secure connections to version control.</p>
+</div>
+<span class="material-symbols-outlined text-primary-dim">security</span>
+</div>
+<div class="space-y-4">
+<div class="space-y-1">
+<label class="text-[11px] uppercase tracking-widest text-on-surface-variant font-label">GitHub personal access token</label>
+<div class="relative group">
+<input class="w-full bg-surface-container-highest border-0 rounded-lg px-4 py-3 text-on-surface font-mono text-sm focus:ring-1 focus:ring-primary transition-all" type="password" value="ghp_************************"/>
+<button class="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary">
+<span class="material-symbols-outlined text-sm">visibility</span>
+</button>
+</div>
+</div>
+<div class="flex gap-4">
+<button class="flex-1 bg-gradient-to-r from-primary to-primary-dim text-on-primary-container font-semibold py-2.5 rounded-lg text-sm hover:opacity-90 transition-opacity">Verify Connection</button>
+<button class="px-6 py-2.5 bg-surface-container-highest text-on-surface-variant rounded-lg text-sm hover:text-on-surface transition-colors">Rotate Token</button>
+</div>
+</div>
+</div>
+<!-- Analysis Toggles Bento -->
+<div class="bg-surface-container-low rounded-xl p-6 ghost-border flex flex-col justify-between">
+<div>
+<h3 class="font-headline text-xl italic text-on-surface mb-4">Quick Preferences</h3>
+<div class="space-y-4">
+<div class="flex justify-between items-center">
+<span class="text-sm text-on-surface">Auto-Analysis</span>
+<div class="w-10 h-5 bg-primary/20 rounded-full relative cursor-pointer">
+<div class="absolute right-1 top-1 w-3 h-3 bg-primary rounded-full"></div>
+</div>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-sm text-on-surface">Deep Refactoring</span>
+<div class="w-10 h-5 bg-surface-container-highest rounded-full relative cursor-pointer">
+<div class="absolute left-1 top-1 w-3 h-3 bg-on-surface-variant rounded-full"></div>
+</div>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-sm text-on-surface">Verbose Logs</span>
+<div class="w-10 h-5 bg-primary/20 rounded-full relative cursor-pointer">
+<div class="absolute right-1 top-1 w-3 h-3 bg-primary rounded-full"></div>
+</div>
+</div>
+</div>
+</div>
+<p class="text-[10px] text-on-surface-variant leading-relaxed italic mt-4 font-headline">Changes to these parameters take effect on the next analysis cycle.</p>
+</div>
+</div>
+</section>
+<!-- Section: Analysis Preferences -->
+<section class="space-y-6">
+<h2 class="font-headline text-2xl italic text-on-surface">Analysis Preferences</h2>
+<div class="bg-surface-container-low rounded-xl overflow-hidden ghost-border">
+<div class="grid grid-cols-1 md:grid-cols-2">
+<div class="p-8 border-r border-outline-variant/10 space-y-6">
+<div class="space-y-4">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary">analytics</span>
+<h4 class="font-headline italic text-lg">Execution Constraints</h4>
+</div>
+<div class="space-y-4">
+<div class="flex flex-col gap-2">
+<div class="flex justify-between">
+<label class="text-[11px] uppercase tracking-widest text-on-surface-variant font-label">Max Analysis Depth</label>
+<span class="text-xs text-primary font-mono">1,500 Lines</span>
+</div>
+<input class="w-full h-1 bg-surface-container-highest accent-primary appearance-none rounded-full" type="range"/>
+</div>
+<div class="flex flex-col gap-2">
+<label class="text-[11px] uppercase tracking-widest text-on-surface-variant font-label">Complexity Threshold</label>
+<select class="w-full bg-surface-container-highest border-0 rounded-lg px-4 py-3 text-on-surface text-sm focus:ring-1 focus:ring-primary appearance-none">
+<option>Strict (McCabe &gt; 10)</option>
+<option selected="">Standard (McCabe &gt; 15)</option>
+<option>Lax (McCabe &gt; 25)</option>
+</select>
+</div>
+</div>
+</div>
+</div>
+<div class="p-8 space-y-6">
+<div class="space-y-4">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary">block</span>
+<h4 class="font-headline italic text-lg">Exclusion Rules</h4>
+</div>
+<div class="space-y-2">
+<label class="text-[11px] uppercase tracking-widest text-on-surface-variant font-label">Ignored Paths &amp; Languages</label>
+<div class="flex flex-wrap gap-2 mb-3">
+<span class="px-3 py-1 bg-surface-container-highest text-primary-fixed-dim text-xs rounded-full flex items-center gap-2">
+                                            *.min.js <span class="material-symbols-outlined text-[12px] cursor-pointer">close</span>
+</span>
+<span class="px-3 py-1 bg-surface-container-highest text-primary-fixed-dim text-xs rounded-full flex items-center gap-2">
+                                            /vendor/* <span class="material-symbols-outlined text-[12px] cursor-pointer">close</span>
+</span>
+<span class="px-3 py-1 bg-surface-container-highest text-primary-fixed-dim text-xs rounded-full flex items-center gap-2">
+                                            .pyc <span class="material-symbols-outlined text-[12px] cursor-pointer">close</span>
+</span>
+</div>
+<div class="flex gap-2">
+<input class="flex-1 bg-surface-container-highest border-0 rounded-lg px-4 py-2 text-sm text-on-surface focus:ring-1 focus:ring-primary" placeholder="Add pattern (e.g. node_modules/)" type="text"/>
+<button class="px-4 py-2 bg-surface-container-highest text-primary rounded-lg border border-primary/20 hover:bg-primary/10 transition-colors">Add</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Section: Authorized Architects (Team) -->
+<section class="space-y-6 pb-12">
+<div class="flex justify-between items-end">
+<div>
+<h2 class="font-headline text-2xl italic text-on-surface">Authorized Architects</h2>
+<p class="text-on-surface-variant text-sm font-body">The core collective responsible for System Alpha governance.</p>
+</div>
+<button class="bg-surface-container-high hover:bg-surface-container-highest border border-outline-variant/30 text-on-surface px-6 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2 transition-all">
+<span class="material-symbols-outlined text-sm">person_add</span>
+                        Invite Architect
+                    </button>
+</div>
+<div class="bg-surface-container-low rounded-xl overflow-hidden ghost-border">
+<table class="w-full text-left">
+<thead>
+<tr class="bg-surface-container-highest/30">
+<th class="px-6 py-4 text-[11px] uppercase tracking-widest text-on-surface-variant font-label">Architect</th>
+<th class="px-6 py-4 text-[11px] uppercase tracking-widest text-on-surface-variant font-label">Access Role</th>
+<th class="px-6 py-4 text-[11px] uppercase tracking-widest text-on-surface-variant font-label">Activity Status</th>
+<th class="px-6 py-4 text-[11px] uppercase tracking-widest text-on-surface-variant font-label"></th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/10">
+<tr class="hover:bg-surface-container-highest/20 transition-colors group">
+<td class="px-6 py-5">
+<div class="flex items-center gap-3">
+<img alt="Architect Sarah Chen" class="w-10 h-10 rounded-lg object-cover" data-alt="Portrait of professional woman engineer in dark modern office, high-end studio lighting, sharp focus" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAotY70ANrzgbHpXNKk7xWcJN_VBbU2vrIbMdDuXL4pkEABhUDRJKNCQVYv3vsDYQqfLqEU6nrVsuDERok9OVBusYeO2I8_szUPW-wqWE7PSNB-8hax04PLNmUw_8LRu-08n9wHgU-Ue4_0SCuQN8obbcNmwlUDpU9TEdiprBC20VpAGNLwqxrjnzdmrFJ3S9hgcgxTzjDpmrE6CfwXlsk90ZiNMjrmDBTKoABYyolqsMheSjOl8UcPpcNvRwhqto_lBtHmQCTSKEw"/>
+<div>
+<div class="text-on-surface font-medium text-sm">Sarah Chen</div>
+<div class="text-[11px] text-on-surface-variant">sarah.c@intel.arch</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-5">
+<span class="px-2.5 py-1 bg-primary/10 text-primary-fixed text-[11px] font-semibold uppercase tracking-wide rounded border border-primary/20">Lead Architect</span>
+</td>
+<td class="px-6 py-5">
+<div class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 bg-[#00e3fd] rounded-full animate-pulse"></span>
+<span class="text-xs text-on-surface-variant font-label">Active now</span>
+</div>
+</td>
+<td class="px-6 py-5 text-right">
+<button class="text-on-surface-variant hover:text-error transition-colors">
+<span class="material-symbols-outlined">more_horiz</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-highest/20 transition-colors group">
+<td class="px-6 py-5">
+<div class="flex items-center gap-3">
+<img alt="Architect Marcus Thorne" class="w-10 h-10 rounded-lg object-cover" data-alt="Close up of middle-aged man with beard, professional profile picture, sophisticated low-key lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDcU8XdR1vCQ04ol1zB9zrQuyZvvTox6StWf0LvPS-WBbwL5CoVSpFsl8QqCNPPf3B8fhvWHw7hCSBvtBPdRl1n_XWMsiVc6G-QD-nu6U0V48F_KYG37xtSbKVVjZTfo1hv-ZHKDAMEB4gX_rkihhNRoEtXnOm_l5jp6GDPDfbSCTXjJB8nJWQ9dgCL0eDAnvKtXXHU0bgf39nk-6SmElP-vSs59NFNfNyBpO7wVgpDfs4O5WNXiUmSvDQxudZafCUD9jOVdK0szrQ"/>
+<div>
+<div class="text-on-surface font-medium text-sm">Marcus Thorne</div>
+<div class="text-[11px] text-on-surface-variant">m.thorne@intel.arch</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-5">
+<span class="px-2.5 py-1 bg-surface-container-highest text-on-surface-variant text-[11px] font-medium uppercase tracking-wide rounded border border-outline-variant/30">System Auditor</span>
+</td>
+<td class="px-6 py-5">
+<span class="text-xs text-on-surface-variant/60 font-label">Last seen 4h ago</span>
+</td>
+<td class="px-6 py-5 text-right">
+<button class="text-on-surface-variant hover:text-error transition-colors">
+<span class="material-symbols-outlined">more_horiz</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-highest/20 transition-colors group">
+<td class="px-6 py-5">
+<div class="flex items-center gap-3">
+<img alt="Architect Elena Rodriguez" class="w-10 h-10 rounded-lg object-cover" data-alt="Sophisticated woman developer with glasses, cinematic portrait, soft highlights on obsidian background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBgxg0xgOM4_1VSNMGspSjR-LplWA-P90CxbkHMdMPgkG5PW-qCJg8GJ3tngkG3To8mKxQQ2_jT-fhKlKkMhFX8BiUM9B_7szdZxoaDu6KCVLXoRX6V_SsHCtpmQICrw4PZ24F7KK7892RhV4lAxtqdRRYRCLZ0YRhBn1RrTXitxj0pXMxgVdgxaN4VRXbSw0D7N1bwdOKX4r8LGHXFDYPqQNJh75Ux2_3NajiRFOi39Kw7fJSqoJ16gY2DGW8Ct4z7Ta4KEPsrDmo"/>
+<div>
+<div class="text-on-surface font-medium text-sm">Elena Rodriguez</div>
+<div class="text-[11px] text-on-surface-variant">elena.r@intel.arch</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-5">
+<span class="px-2.5 py-1 bg-surface-container-highest text-on-surface-variant text-[11px] font-medium uppercase tracking-wide rounded border border-outline-variant/30">Analyst</span>
+</td>
+<td class="px-6 py-5">
+<span class="text-xs text-on-surface-variant/60 font-label">Active 12m ago</span>
+</td>
+<td class="px-6 py-5 text-right">
+<button class="text-on-surface-variant hover:text-error transition-colors">
+<span class="material-symbols-outlined">more_horiz</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</div>
+</main>
+<!-- Contextual FAB - Suppression Logic: Suppressed on Settings/Team as per rules -->
+</body></html>

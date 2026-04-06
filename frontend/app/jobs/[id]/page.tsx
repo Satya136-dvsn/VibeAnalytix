@@ -158,7 +158,7 @@ export default function JobResultsPage() {
           <span className="material-symbols-outlined text-sm">add</span> New Analysis
         </button>
         <nav className="flex-1 flex flex-col gap-1">
-          <div onClick={() => router.push('/')} className="nav-item">
+          <div onClick={() => router.push('/dashboard')} className="nav-item cursor-pointer">
             <span className="material-symbols-outlined text-lg">folder_open</span>
             <span className="text-sm font-medium">Workspace</span>
           </div>
@@ -166,7 +166,7 @@ export default function JobResultsPage() {
             <span className="material-symbols-outlined text-lg">insights</span>
             <span className="text-sm font-medium">Analysis</span>
           </div>
-          <div className="nav-item">
+          <div onClick={() => router.push('/history')} className="nav-item cursor-pointer">
             <span className="material-symbols-outlined text-lg">history</span>
             <span className="text-sm font-medium">History</span>
           </div>

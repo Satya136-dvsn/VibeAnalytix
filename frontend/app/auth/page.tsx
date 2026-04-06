@@ -16,7 +16,7 @@ export default function AuthPage() {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    if (isAuthenticated) router.push('/')
+    if (isAuthenticated) router.push('/dashboard')
   }, [isAuthenticated, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -29,7 +29,7 @@ export default function AuthPage() {
       } else {
         await register(email, password)
       }
-      router.push('/')
+      router.push('/dashboard')
     } catch (err: any) {
       setError(err.response?.data?.error?.message || 'Authentication failed')
     } finally {
@@ -121,7 +121,7 @@ export default function AuthPage() {
                     Password
                   </label>
                   {mode === 'login' && (
-                    <a href="#" className="text-[0.6875rem] text-primary hover:text-primary-fixed transition-colors uppercase tracking-widest">
+                    <a href="/forgot-password" className="text-[0.6875rem] text-primary hover:text-primary-fixed transition-colors uppercase tracking-widest">
                       Forgot Password
                     </a>
                   )}
@@ -161,13 +161,22 @@ export default function AuthPage() {
             {/* Toggle */}
             <div className="mt-8 pt-8 border-t border-outline-variant/10 text-center">
               <p className="text-on-surface-variant text-sm">
-                {mode === 'login' ? 'New to the platform?' : 'Already have an account?'}
-                <button
-                  onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError('') }}
-                  className="text-primary font-semibold hover:underline decoration-primary/30 underline-offset-4 ml-1 transition-all"
-                >
-                  {mode === 'login' ? 'Create Account' : 'Sign In'}
-                </button>
+                  {mode === 'login' ? 'New to the platform?' : 'Already have an account?'}
+                  {mode === 'login' ? (
+                    <button
+                      onClick={() => router.push('/sign-up')}
+                      className="text-primary font-semibold hover:underline decoration-primary/30 underline-offset-4 ml-1 transition-all"
+                    >
+                      Create Account
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => { setMode('login'); setError('') }}
+                      className="text-primary font-semibold hover:underline decoration-primary/30 underline-offset-4 ml-1 transition-all"
+                    >
+                      Sign In
+                    </button>
+                  )}
               </p>
             </div>
           </div>

@@ -122,7 +122,8 @@ class AnalysisEngine:
                 for other_file in parsed_files:
                     # Simple heuristic: if module name matches file path
                     if module in other_file.path or module.replace(".", "/") in other_file.path:
-                        dep_graph[parsed_file.path].add(other_file.path)
+                        if parsed_file.path != other_file.path:
+                            dep_graph[parsed_file.path].add(other_file.path)
                         is_internal = True
                         break
 

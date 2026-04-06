@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>History &amp; Reports | Editorial Intelligence</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Newsreader:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-fixed": "#a98fff",
+                        "surface-variant": "#242629",
+                        "primary-container": "#a98fff",
+                        "on-primary-fixed-variant": "#32008a",
+                        "inverse-primary": "#6834eb",
+                        "primary-fixed-dim": "#9c7eff",
+                        "error": "#ff6e84",
+                        "surface": "#0d0e10",
+                        "secondary-fixed": "#d7e4ec",
+                        "primary-dim": "#7e51ff",
+                        "inverse-surface": "#faf9fb",
+                        "primary": "#b6a0ff",
+                        "tertiary-fixed": "#00e3fd",
+                        "on-tertiary": "#005762",
+                        "outline-variant": "#47484a",
+                        "on-error-container": "#ffb2b9",
+                        "error-dim": "#d73357",
+                        "on-secondary-container": "#c5d2da",
+                        "on-tertiary-fixed": "#003840",
+                        "on-surface": "#fdfbfe",
+                        "inverse-on-surface": "#555557",
+                        "surface-container-highest": "#242629",
+                        "tertiary-container": "#00e3fd",
+                        "surface-bright": "#2b2c2f",
+                        "on-background": "#fdfbfe",
+                        "on-surface-variant": "#ababad",
+                        "on-primary-container": "#280072",
+                        "secondary-container": "#3c494f",
+                        "tertiary": "#81ecff",
+                        "on-secondary": "#47545a",
+                        "on-tertiary-container": "#004d57",
+                        "on-tertiary-fixed-variant": "#005762",
+                        "tertiary-dim": "#00d4ec",
+                        "secondary": "#d7e4ec",
+                        "error-container": "#a70138",
+                        "surface-container-lowest": "#000000",
+                        "background": "#0d0e10",
+                        "on-primary-fixed": "#000000",
+                        "outline": "#757578",
+                        "surface-container": "#181a1c",
+                        "on-error": "#490013",
+                        "secondary-fixed-dim": "#c9d6de",
+                        "tertiary-fixed-dim": "#00d4ec",
+                        "on-secondary-fixed": "#354147",
+                        "on-primary": "#340090",
+                        "surface-dim": "#0d0e10",
+                        "surface-container-low": "#121316",
+                        "on-secondary-fixed-variant": "#515d64",
+                        "surface-container-high": "#1e2022",
+                        "secondary-dim": "#c9d6de",
+                        "surface-tint": "#b6a0ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Newsreader"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #0d0e10;
+            color: #fdfbfe;
+            font-family: 'Inter', sans-serif;
+        }
+        .editorial-shadow {
+            box-shadow: 0px 20px 50px rgba(182, 160, 255, 0.08);
+        }
+        .glass-panel {
+            background: rgba(24, 26, 28, 0.6);
+            backdrop-filter: blur(20px);
+        }
+    </style>
+</head>
+<body class="flex min-h-screen overflow-x-hidden">
+<!-- SideNavBar (Shared Component) -->
+<aside class="fixed top-0 left-0 h-screen w-64 bg-[#121316] border-r border-[#47484a]/15 flex flex-col py-6 px-4 gap-8 z-40 hidden md:flex">
+<div class="flex items-center gap-3 px-2">
+<div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-primary to-primary-dim flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary-container text-sm" style="font-variation-settings: 'FILL' 1;">terminal</span>
+</div>
+<div class="flex flex-col">
+<span class="font-headline text-lg italic text-[#fdfbfe]">System Alpha</span>
+<span class="font-body text-[10px] text-on-surface-variant uppercase tracking-[0.2em]">Production Cluster</span>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 text-[#d7e4ec]/50 hover:bg-[#242629]/50 hover:text-[#fdfbfe] transition-colors duration-200 group" href="#">
+<span class="material-symbols-outlined text-[20px]">folder</span>
+<span class="font-label text-[13px] font-medium tracking-wide">Repositories</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-[#d7e4ec]/50 hover:bg-[#242629]/50 hover:text-[#fdfbfe] transition-colors duration-200 group" href="#">
+<span class="material-symbols-outlined text-[20px]">hub</span>
+<span class="font-label text-[13px] font-medium tracking-wide">Dependencies</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-[#d7e4ec]/50 hover:bg-[#242629]/50 hover:text-[#fdfbfe] transition-colors duration-200 group" href="#">
+<span class="material-symbols-outlined text-[20px]">account_tree</span>
+<span class="font-label text-[13px] font-medium tracking-wide">Execution</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-[#b6a0ff] bg-[#242629] rounded-md font-semibold translate-x-1 duration-150" href="#">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">history</span>
+<span class="font-label text-[13px] tracking-wide">Snapshots</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-[#d7e4ec]/50 hover:bg-[#242629]/50 hover:text-[#fdfbfe] transition-colors duration-200 group" href="#">
+<span class="material-symbols-outlined text-[20px]">group</span>
+<span class="font-label text-[13px] font-medium tracking-wide">Team</span>
+</a>
+</nav>
+<div class="mt-auto space-y-4">
+<button class="w-full py-2 px-4 rounded-md bg-gradient-to-r from-primary to-primary-dim text-on-primary-container font-label text-[13px] font-bold shadow-lg hover:opacity-90 transition-opacity">
+                New Analysis
+            </button>
+<div class="pt-4 border-t border-outline-variant/10 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 text-[#d7e4ec]/50 hover:text-[#fdfbfe] transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">menu_book</span>
+<span class="font-label text-[13px]">Docs</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-[#d7e4ec]/50 hover:text-[#fdfbfe] transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">contact_support</span>
+<span class="font-label text-[13px]">Support</span>
+</a>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 md:ml-64 min-h-screen flex flex-col bg-surface">
+<!-- TopAppBar (Shared Component) -->
+<header class="sticky top-0 z-50 flex justify-between items-center w-full px-6 py-4 bg-[#0d0e10] editorial-shadow">
+<div class="flex items-center gap-8">
+<h1 class="font-headline text-xl italic font-bold text-[#fdfbfe]">Editorial Intelligence</h1>
+<nav class="hidden lg:flex items-center gap-6">
+<a class="font-label text-[13px] text-[#d7e4ec]/60 hover:text-[#fdfbfe] transition-all duration-300" href="#">Insights</a>
+<a class="font-label text-[13px] text-[#d7e4ec]/60 hover:text-[#fdfbfe] transition-all duration-300" href="#">Terminal</a>
+<a class="font-label text-[13px] text-[#d7e4ec]/60 hover:text-[#fdfbfe] transition-all duration-300" href="#">Flow</a>
+<a class="font-label text-[13px] text-[#b6a0ff] border-b-2 border-[#b6a0ff] pb-1" href="#">History</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative hidden sm:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-lg">search</span>
+<input class="bg-surface-container-highest/50 border-none text-on-surface text-sm rounded-lg pl-10 pr-4 py-2 w-64 focus:ring-1 focus:ring-primary" placeholder="Search archive..." type="text"/>
+</div>
+<div class="flex items-center gap-2">
+<button class="w-10 h-10 flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant/30 ml-2">
+<img alt="Lead Architect Profile" class="w-full h-full object-cover" data-alt="close-up portrait of a professional male architect with a focused expression in a modern studio setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBt3qBW-I02Y-Jme4rXLc9oovfd5KWzpgxGCuJrbbQSaFjNbw1MgjIfhz8RAdQ8AaCzY6fhYFJZk1yph6eMmf4GzSaqNGPnZgz2pRSS56E77oe2LTQJxZfpcAYjkJOhQYL4aLIPHPts_cppNhQLVFj-HwBEZKL4PBcyC29L2KhKRmJ-U7WH7_8ADLBtZfjQYzr-fxPYrRh-SkJuxYe3MD1dHynCmquUwGLaRxFRx7zIaWocBYre_4GsKw_u-3WCQrmTAf6y4J2U8gs"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Screen Content -->
+<section class="p-6 md:p-10 max-w-7xl mx-auto w-full space-y-10">
+<!-- Page Heading & Stats Bento -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<div class="lg:col-span-2 space-y-2">
+<h2 class="font-headline text-4xl italic text-on-surface">Intelligence Archive</h2>
+<p class="font-body text-on-surface-variant max-w-xl">
+                        Review past codebase analyses, architectural snapshots, and neural job executions. A living record of your system's evolution.
+                    </p>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="bg-surface-container-low p-4 rounded-xl flex flex-col justify-center">
+<span class="font-label text-[10px] uppercase tracking-widest text-on-surface-variant">Total Jobs</span>
+<span class="text-2xl font-semibold text-primary">1,284</span>
+</div>
+<div class="bg-surface-container-low p-4 rounded-xl flex flex-col justify-center">
+<span class="font-label text-[10px] uppercase tracking-widest text-on-surface-variant">Avg Duration</span>
+<span class="text-2xl font-semibold text-tertiary">4.2m</span>
+</div>
+</div>
+</div>
+<!-- Filter & Search Toolbar -->
+<div class="flex flex-col md:flex-row gap-4 justify-between items-center bg-surface-container-low/50 p-4 rounded-xl">
+<div class="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0">
+<button class="px-4 py-1.5 rounded-full bg-primary-container text-on-primary-container font-label text-xs font-semibold whitespace-nowrap">All Jobs</button>
+<button class="px-4 py-1.5 rounded-full bg-surface-container-highest text-on-surface-variant font-label text-xs hover:text-on-surface transition-colors whitespace-nowrap">Completed</button>
+<button class="px-4 py-1.5 rounded-full bg-surface-container-highest text-on-surface-variant font-label text-xs hover:text-on-surface transition-colors whitespace-nowrap">In Progress</button>
+<button class="px-4 py-1.5 rounded-full bg-surface-container-highest text-on-surface-variant font-label text-xs hover:text-on-surface transition-colors whitespace-nowrap">Failed</button>
+</div>
+<div class="flex items-center gap-3 w-full md:w-auto">
+<div class="relative flex-1 md:w-64">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">filter_list</span>
+<select class="w-full bg-surface-container-highest border-none text-on-surface text-xs rounded-lg pl-10 pr-4 py-2 appearance-none focus:ring-1 focus:ring-primary">
+<option>Sort by: Newest First</option>
+<option>Sort by: Oldest First</option>
+<option>Sort by: Duration</option>
+</select>
+</div>
+<button class="p-2 bg-surface-container-highest rounded-lg text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-sm">download</span>
+</button>
+</div>
+</div>
+<!-- Intelligence Feed (The List) -->
+<div class="space-y-4">
+<!-- Job Entry 1: Completed -->
+<div class="group bg-surface-container-low hover:bg-surface-container-high transition-all duration-300 rounded-xl overflow-hidden cursor-pointer">
+<div class="p-6 flex flex-col md:flex-row gap-6 items-start md:items-center">
+<div class="w-12 h-12 rounded-lg bg-surface-container-highest flex items-center justify-center shrink-0 border border-outline-variant/10">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<div class="flex-1 space-y-1">
+<div class="flex items-center gap-3">
+<h3 class="font-body font-semibold text-on-surface">Core Infrastructure Audit - v2.4.0</h3>
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-primary/10 text-primary uppercase tracking-tighter">Completed</span>
+</div>
+<p class="text-sm text-on-surface-variant line-clamp-1">Identified 4 architectural bottlenecks in the event dispatcher and suggested 2 dependency upgrades.</p>
+<div class="flex items-center gap-4 pt-1">
+<div class="flex items-center gap-1.5 text-[11px] text-on-surface-variant/70 uppercase tracking-wider">
+<span class="material-symbols-outlined text-xs">calendar_today</span>
+<span>Oct 24, 2023 • 14:22</span>
+</div>
+<div class="flex items-center gap-1.5 text-[11px] text-on-surface-variant/70 uppercase tracking-wider">
+<span class="material-symbols-outlined text-xs">timer</span>
+<span>3m 12s</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-2 self-end md:self-center">
+<button class="px-4 py-2 text-xs font-semibold text-primary hover:bg-primary/5 rounded-lg transition-colors">View Report</button>
+<span class="material-symbols-outlined text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity">chevron_right</span>
+</div>
+</div>
+</div>
+<!-- Job Entry 2: In Progress -->
+<div class="group bg-surface-container-low hover:bg-surface-container-high transition-all duration-300 rounded-xl overflow-hidden cursor-pointer">
+<div class="p-6 flex flex-col md:flex-row gap-6 items-start md:items-center">
+<div class="w-12 h-12 rounded-lg bg-surface-container-highest flex items-center justify-center shrink-0 border border-outline-variant/10">
+<div class="w-5 h-5 rounded-full border-2 border-tertiary/30 border-t-tertiary animate-spin"></div>
+</div>
+<div class="flex-1 space-y-1">
+<div class="flex items-center gap-3">
+<h3 class="font-body font-semibold text-on-surface">Memory Leak Analysis — Production Cluster B</h3>
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-tertiary/10 text-tertiary uppercase tracking-tighter">In Progress</span>
+</div>
+<div class="w-full h-1 bg-surface-container-highest rounded-full mt-2 max-w-md overflow-hidden">
+<div class="h-full bg-tertiary w-[65%]"></div>
+</div>
+<p class="text-[11px] text-on-surface-variant/70 uppercase tracking-wider pt-1">Current Phase: Analyzing Heap Dumps (65%)</p>
+</div>
+<div class="flex items-center gap-2 self-end md:self-center">
+<button class="px-4 py-2 text-xs font-semibold text-on-surface-variant hover:text-on-surface transition-colors">Cancel</button>
+</div>
+</div>
+</div>
+<!-- Job Entry 3: Failed -->
+<div class="group bg-surface-container-low hover:bg-surface-container-high transition-all duration-300 rounded-xl overflow-hidden cursor-pointer">
+<div class="p-6 flex flex-col md:flex-row gap-6 items-start md:items-center">
+<div class="w-12 h-12 rounded-lg bg-surface-container-highest flex items-center justify-center shrink-0 border border-outline-variant/10">
+<span class="material-symbols-outlined text-error" style="font-variation-settings: 'FILL' 1;">error</span>
+</div>
+<div class="flex-1 space-y-1">
+<div class="flex items-center gap-3">
+<h3 class="font-body font-semibold text-on-surface">Security Vulnerability Scan — Auth Module</h3>
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-error/10 text-error uppercase tracking-tighter">Failed</span>
+</div>
+<p class="text-sm text-error-dim">Network timeout: Failed to reach internal repository mirror after 3 attempts.</p>
+<div class="flex items-center gap-4 pt-1">
+<div class="flex items-center gap-1.5 text-[11px] text-on-surface-variant/70 uppercase tracking-wider">
+<span class="material-symbols-outlined text-xs">calendar_today</span>
+<span>Oct 23, 2023 • 09:05</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-2 self-end md:self-center">
+<button class="px-4 py-2 text-xs font-semibold bg-surface-container-highest text-on-surface rounded-lg hover:bg-outline-variant/20 transition-colors">Retry Job</button>
+</div>
+</div>
+</div>
+<!-- Job Entry 4: Completed -->
+<div class="group bg-surface-container-low hover:bg-surface-container-high transition-all duration-300 rounded-xl overflow-hidden cursor-pointer">
+<div class="p-6 flex flex-col md:flex-row gap-6 items-start md:items-center">
+<div class="w-12 h-12 rounded-lg bg-surface-container-highest flex items-center justify-center shrink-0 border border-outline-variant/10">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<div class="flex-1 space-y-1">
+<div class="flex items-center gap-3">
+<h3 class="font-body font-semibold text-on-surface">Documentation Sync - Alpha Docs</h3>
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-primary/10 text-primary uppercase tracking-tighter">Completed</span>
+</div>
+<p class="text-sm text-on-surface-variant line-clamp-1">Updated 124 API endpoints and generated new swagger schemas.</p>
+<div class="flex items-center gap-4 pt-1">
+<div class="flex items-center gap-1.5 text-[11px] text-on-surface-variant/70 uppercase tracking-wider">
+<span class="material-symbols-outlined text-xs">calendar_today</span>
+<span>Oct 22, 2023 • 18:45</span>
+</div>
+<div class="flex items-center gap-1.5 text-[11px] text-on-surface-variant/70 uppercase tracking-wider">
+<span class="material-symbols-outlined text-xs">timer</span>
+<span>58s</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-2 self-end md:self-center">
+<button class="px-4 py-2 text-xs font-semibold text-primary hover:bg-primary/5 rounded-lg transition-colors">View Report</button>
+<span class="material-symbols-outlined text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity">chevron_right</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Pagination/Footer -->
+<div class="flex justify-between items-center pt-6 border-t border-outline-variant/10">
+<p class="font-body text-xs text-on-surface-variant">Showing 1-10 of 1,284 snapshots</p>
+<div class="flex gap-2">
+<button class="w-10 h-10 flex items-center justify-center rounded-lg bg-surface-container-low text-on-surface hover:bg-surface-container-highest transition-colors">
+<span class="material-symbols-outlined text-sm">chevron_left</span>
+</button>
+<button class="px-4 h-10 flex items-center justify-center rounded-lg bg-surface-container-highest text-on-surface text-xs font-bold">1</button>
+<button class="px-4 h-10 flex items-center justify-center rounded-lg bg-surface-container-low text-on-surface-variant text-xs hover:bg-surface-container-highest transition-colors">2</button>
+<button class="px-4 h-10 flex items-center justify-center rounded-lg bg-surface-container-low text-on-surface-variant text-xs hover:bg-surface-container-highest transition-colors">3</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-lg bg-surface-container-low text-on-surface hover:bg-surface-container-highest transition-colors">
+<span class="material-symbols-outlined text-sm">chevron_right</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Bottom Navigation (Shared Component - Mobile Only) -->
+<nav class="fixed bottom-0 left-0 right-0 h-16 bg-surface-container-low md:hidden flex justify-around items-center px-4 border-t border-outline-variant/10 z-50">
+<a class="flex flex-col items-center gap-1 text-on-surface-variant" href="#">
+<span class="material-symbols-outlined text-[20px]">folder</span>
+<span class="text-[10px] font-medium">Repos</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-on-surface-variant" href="#">
+<span class="material-symbols-outlined text-[20px]">hub</span>
+<span class="text-[10px] font-medium">Hub</span>
+</a>
+<div class="relative -top-4">
+<button class="w-12 h-12 rounded-full bg-gradient-to-tr from-primary to-primary-dim flex items-center justify-center shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined text-on-primary-container" style="font-variation-settings: 'FILL' 1;">add</span>
+</button>
+</div>
+<a class="flex flex-col items-center gap-1 text-primary" href="#">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">history</span>
+<span class="text-[10px] font-medium">History</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-on-surface-variant" href="#">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+<span class="text-[10px] font-medium">Config</span>
+</a>
+</nav>
+</main>
+</body></html>

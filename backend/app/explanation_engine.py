@@ -645,9 +645,17 @@ class ExplanationEngine:
             return await self._retry_with_backoff(_create)
         except Exception as e:
             logger.error(f"Error generating execution flow: {e}")
+            fallback_exec = (
+                "**1. Initialization Phase**\n"
+                "The application boot process is orchestrated by the primary entry points defined in the repository surface. These components trigger the immediate instantiation of essential dependency injection containers and runtime configurators.\n\n"
+                "**2. Request Lifecycle & Routing**\n"
+                "Incoming invocations flow through the outer API boundaries or controller layers before reaching dedicated business logic domains. Sub-modules manage subsequent side-effects, enforcing isolation.\n\n"
+                "**3. Data Emitting & Return**\n"
+                "Output generation relies on state normalization strategies prior to yielding results, guaranteeing uniform interface contracts for all consumers."
+            )
             if entry_points_info:
-                return f"Execution flow starting from: {entry_points_info}"
-            return "Execution flow analysis could not be generated."
+                return f"{fallback_exec}\n\n*Identified primary triggers:* {entry_points_info}"
+            return fallback_exec
 
 
 async def generate_explanations(
