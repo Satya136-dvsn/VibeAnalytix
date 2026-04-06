@@ -7,13 +7,27 @@ import { Github, Upload, LogOut, CheckCircle2, AlertCircle, FileArchive } from '
 
 export default function SubmissionPage() {
   const router = useRouter()
-  const { isAuthenticated, isLoading, user, logout, submitJob, pollJobStatus } = useAppStore()
+  const { isAuthenticated, isLoading, user, logout, submitJob, pollJobStatus, getAllJobs } = useAppStore()
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       router.push('/auth')
+      return
     }
-  }, [isAuthenticated, isLoading, router])
+
+    if (!isLoading && isAuthenticated) {
+      getAllJobs().then(data => {
+        const formatted = data.slice(0, 3).map((j: any) => ({
+          id: j.job_id,
+          name: j.github_url ? j.github_url.split('/').pop() : 'Project Archive',
+          status: j.status,
+          progress: j.progress_pct,
+          updated_at: new Date(j.updated_at).toLocaleDateString()
+        }));
+        setRecentJobs(formatted);
+      }).catch(console.error);
+    }
+  }, [isAuthenticated, isLoading, router, getAllJobs])
 
   const [loading, setLoading] = useState(false)
   const [githubUrl, setGithubUrl] = useState('')
@@ -250,6 +264,63 @@ export default function SubmissionPage() {
                   )}
                 </div>
               </div>
+            </div>
+          </section>
+
+          <section className="mb-16">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-headline italic text-on-surface">Recent Intelligence Reports</h3>
+              <div className="flex gap-2">
+                <button className="px-3 py-1 text-[10px] uppercase tracking-widest text-on-surface-variant hover:text-primary transition-colors">All Projects</button>
+                <button className="px-3 py-1 text-[10px] uppercase tracking-widest text-primary bg-primary/10 rounded-full border border-primary/20">Active Analysis</button>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {recentJobs.length === 0 ? (
+                <div className="card p-12 text-center border-dashed border-outline-variant/30 bg-transparent">
+                  <span className="material-symbols-outlined text-4xl text-on-surface-variant/20 mb-2">analytics</span>
+                  <p className="text-sm text-on-surface-variant">No recent analysis deployment detected in neural registry.</p>
+                </div>
+              ) : (
+                recentJobs.map((job) => (
+                  <div 
+                    key={job.id} 
+                    onClick={() => job.status === 'completed' && router.push(`/jobs/${job.id}`)}
+                    className="card p-4 flex items-center gap-6 hover:bg-surface-container-high transition-all cursor-pointer group"
+                  >
+                    <div className="w-12 h-12 rounded-xl bg-slate-900 border border-outline-variant/10 flex items-center justify-center text-on-surface-variant group-hover:text-primary transition-colors">
+                      <span className="material-symbols-outlined">{job.status === 'completed' ? 'terminal' : 'account_tree'}</span>
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="text-sm font-semibold text-on-surface mb-0.5">{job.name}</h4>
+                      <div className="flex items-center gap-3">
+                        <span className="flex items-center gap-1.5">
+                          <span className={`w-1.5 h-1.5 rounded-full ${job.status === 'completed' ? 'bg-emerald-400' : 'bg-primary animate-pulse'}`} />
+                          <span className="text-[10px] uppercase tracking-wider text-on-surface-variant">{job.status === 'completed' ? 'Success' : 'Processing'}</span>
+                        </span>
+                        <span className="text-[10px] text-outline/40 uppercase tracking-widest">Modified {job.updated_at}</span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      {job.status !== 'completed' && (
+                        <div className="mb-1">
+                          <div className="w-24 h-1 bg-surface-container-highest rounded-full overflow-hidden">
+                            <div className="h-full bg-primary" style={{ width: `${job.progress}%` }} />
+                          </div>
+                          <p className="text-[9px] text-primary mt-1 uppercase tracking-widest">{job.progress}% Deep structural scan</p>
+                        </div>
+                      )}
+                      {job.status === 'completed' ? (
+                         <span className="text-[10px] text-primary font-bold uppercase tracking-widest group-hover:underline">View Results</span>
+                      ) : (
+                        <span className="material-symbols-outlined text-on-surface-variant animate-spin text-sm">sync</span>
+                      )}
+                    </div>
+                    <span className="material-symbols-outlined text-on-surface-variant/30 group-hover:text-on-surface transition-colors">more_vert</span>
+                  </div>
+                ))
+              )}
             </div>
           </section>
 

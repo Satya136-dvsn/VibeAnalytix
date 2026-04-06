@@ -221,45 +221,57 @@ export default function JobResultsPage() {
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] pointer-events-none"></div>
 
       {/* ── Side Nav Bar ─────────────────────────────────────── */}
-      <aside className="h-screen w-64 border-r border-outline-variant/10 bg-slate-950 flex flex-col p-4 gap-2 hidden lg:flex sticky top-0 shrink-0 z-20">
-        <div className="mb-4 px-2 hover:cursor-pointer" onClick={() => router.push('/')}>
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full border border-primary/30 flex items-center justify-center bg-primary/10">
-              <span className="material-symbols-outlined text-sm text-primary">person</span>
-            </div>
-            <div>
-              <p className="text-on-background text-xs font-semibold truncate max-w-[140px]">{user?.email}</p>
-              <p className="text-primary text-[10px] tracking-widest uppercase">Project Area</p>
-            </div>
+      <aside className="fixed top-0 left-0 h-screen w-64 bg-surface-container-low border-r border-outline-variant/10 flex flex-col py-6 px-4 gap-6 z-40 hidden lg:flex">
+        {/* Brand */}
+        <div className="flex items-center gap-3 px-2 mb-2 cursor-pointer" onClick={() => router.push('/dashboard')}>
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-primary to-primary-dim flex items-center justify-center">
+            <span className="material-symbols-outlined text-on-primary text-base" style={{ fontVariationSettings: "'FILL' 1" }}>psychology</span>
+          </div>
+          <div>
+            <span className="font-headline text-lg italic text-on-surface">VibeAnalytix</span>
+            <p className="text-[10px] uppercase tracking-[0.2em] text-primary">Neural Engine</p>
           </div>
         </div>
-        <button onClick={() => router.push('/dashboard')} className="bg-gradient-to-r from-primary to-primary-dim text-on-primary py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 mb-4 hover:brightness-110 active:scale-95 transition-all shadow-[0_0_20px_rgba(182,160,255,0.2)]">
-          <span className="material-symbols-outlined text-sm">add</span> New Analysis
-        </button>
-        <nav className="flex-1 flex flex-col gap-1">
-          <div onClick={() => router.push('/dashboard')} className="nav-item cursor-pointer">
-            <span className="material-symbols-outlined text-lg">folder_open</span>
-            <span className="text-sm font-medium">Workspace</span>
+
+        {/* Nav */}
+        <nav className="flex-1 space-y-1">
+          <button onClick={() => router.push('/dashboard')} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all">
+            <span className="material-symbols-outlined text-[20px]">folder_open</span>
+            <span>Workspace</span>
+          </button>
+          <div className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-primary bg-primary/10 font-semibold transition-all">
+            <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>insights</span>
+            <span>Analysis</span>
+            <div className="ml-auto w-1.5 h-1.5 rounded-full bg-primary" />
           </div>
-          <div className="nav-item-active">
-            <span className="material-symbols-outlined text-lg">insights</span>
-            <span className="text-sm font-medium">Analysis</span>
-          </div>
-          <div onClick={() => router.push('/history')} className="nav-item cursor-pointer">
-            <span className="material-symbols-outlined text-lg">history</span>
-            <span className="text-sm font-medium">History</span>
-          </div>
+          <button onClick={() => router.push('/history')} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all">
+            <span className="material-symbols-outlined text-[20px]">history</span>
+            <span>History</span>
+          </button>
+          <button onClick={() => router.push('/settings')} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all">
+            <span className="material-symbols-outlined text-[20px]">settings</span>
+            <span>Settings</span>
+          </button>
         </nav>
-        <div className="mt-auto border-t border-outline-variant/10 pt-4 flex flex-col gap-1">
-          <button onClick={logout} className="nav-item hover:text-rose-400 w-full">
-            <LogOut size={18} />
-            <span className="text-sm font-medium uppercase tracking-widest">Logout</span>
+
+        {/* User section */}
+        <div className="mt-auto space-y-3">
+          <div className="px-3 py-4 bg-surface-container rounded-xl border border-outline-variant/10">
+            <p className="text-[10px] text-on-surface-variant uppercase tracking-widest mb-1 truncate">{user?.email ?? 'Architect'}</p>
+            <p className="text-xs text-primary font-medium flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+              Neural Engine Active
+            </p>
+          </div>
+          <button onClick={logout} className="w-full flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:text-error transition-colors text-sm rounded-xl hover:bg-error/5">
+            <span className="material-symbols-outlined text-[20px]">logout</span>
+            <span className="text-xs uppercase tracking-widest">Logout</span>
           </button>
         </div>
       </aside>
 
       {/* ── Main Content Area ────────────────────────────────── */}
-      <main className="flex-1 overflow-hidden flex flex-col z-10 w-full relative">
+      <main className="flex-1 lg:ml-64 overflow-hidden flex flex-col z-10 w-full relative">
         <header className="p-8 pb-4 flex flex-col gap-4 border-b border-outline-variant/10 glass-panel">
           <div className="flex justify-between items-start">
             <div className="flex flex-col gap-1">
