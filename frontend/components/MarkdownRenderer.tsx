@@ -1,141 +1,141 @@
 'use client'
 
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
-
-interface MarkdownRendererProps {
+interface Props {
   content: string
   className?: string
 }
 
 /**
- * Bulletproof markdown renderer compatible with react-markdown v9.
- *
- * v9 changes:
- *  - Removed `className` prop on <ReactMarkdown>
- *  - Removed `inline` prop from `code` component
- *
- * Strategy: override `pre` to style the block wrapper and `code` to handle
- * both inline and block cases. Block code always has a `language-xxx` className
- * from remark-gfm; inline code has no className. We use that to differentiate.
+ * Zero-dependency Markdown renderer.
+ * Handles: headings, bold, italic, inline code, code blocks, lists, horizontal rules, links.
+ * No external library — no version-conflict issues.
  */
-export default function MarkdownRenderer({ content, className }: MarkdownRendererProps) {
+export default function MarkdownRenderer({ content, className }: Props) {
+  const html = parseMarkdown(content || '')
   return (
-    <div className={className}>
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        components={{
-          // ── Headings ──────────────────────────────────────────────────────────
-          h1: ({ children }) => (
-            <h1 className="text-2xl font-bold text-on-surface mt-6 mb-4 pb-2 border-b border-outline-variant/20">
-              {children}
-            </h1>
-          ),
-          h2: ({ children }) => (
-            <h2 className="text-xl font-bold text-on-surface mt-8 mb-3">
-              {children}
-            </h2>
-          ),
-          h3: ({ children }) => (
-            <h3 className="text-[13px] font-semibold text-primary mt-6 mb-2 uppercase tracking-wider">
-              {children}
-            </h3>
-          ),
-          h4: ({ children }) => (
-            <h4 className="text-sm font-semibold text-on-surface mt-4 mb-2">
-              {children}
-            </h4>
-          ),
-
-          // ── Text elements ─────────────────────────────────────────────────────
-          p: ({ children }) => (
-            <p className="text-on-surface-variant leading-7 mb-4 text-sm">
-              {children}
-            </p>
-          ),
-          strong: ({ children }) => (
-            <strong className="text-on-surface font-semibold">{children}</strong>
-          ),
-          em: ({ children }) => (
-            <em className="text-tertiary italic">{children}</em>
-          ),
-
-          // ── Lists ─────────────────────────────────────────────────────────────
-          ul: ({ children }) => (
-            <ul className="mb-4 ml-1 space-y-1.5">{children}</ul>
-          ),
-          ol: ({ children }) => (
-            <ol className="mb-4 ml-4 space-y-1.5 list-decimal marker:text-primary">{children}</ol>
-          ),
-          li: ({ children }) => (
-            <li className="text-on-surface-variant text-sm leading-6 flex gap-2 items-start">
-              <span className="text-primary mt-[5px] flex-shrink-0 text-[10px]">▸</span>
-              <span>{children}</span>
-            </li>
-          ),
-
-          // ── Code — block vs inline ────────────────────────────────────────────
-          // react-markdown v9: `pre` wraps block code; bare `code` = inline code.
-          // Block code nodes always arrive inside a `pre`, so we style `pre` and
-          // let `code` inside it render unstyled. We detect inline by the absence
-          // of a language className.
-          pre: ({ children }) => (
-            <pre className="bg-[#0d1117] rounded-xl p-4 overflow-x-auto mb-4 border border-outline-variant/10 text-sm font-mono text-green-300">
-              {children}
-            </pre>
-          ),
-          code: ({ className: cls, children }) => {
-            const isBlock = Boolean(cls) // language-xxx present means fenced block
-            if (isBlock) {
-              // Inside a `pre` — just render the code tag cleanly
-              return <code className={cls}>{children}</code>
-            }
-            // Inline code
-            return (
-              <code className="px-1.5 py-0.5 bg-primary/10 text-primary rounded text-[0.82em] font-mono border border-primary/20 whitespace-nowrap">
-                {children}
-              </code>
-            )
-          },
-
-          // ── Other elements ────────────────────────────────────────────────────
-          blockquote: ({ children }) => (
-            <blockquote className="border-l-4 border-primary/40 pl-4 my-4 text-on-surface-variant italic bg-primary/5 py-2 rounded-r-lg">
-              {children}
-            </blockquote>
-          ),
-          hr: () => <hr className="my-6 border-outline-variant/20" />,
-          a: ({ href, children }) => (
-            <a
-              href={href}
-              className="text-primary hover:underline"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {children}
-            </a>
-          ),
-          table: ({ children }) => (
-            <div className="overflow-x-auto mb-4">
-              <table className="w-full text-sm border-collapse border border-outline-variant/20 rounded-lg overflow-hidden">
-                {children}
-              </table>
-            </div>
-          ),
-          th: ({ children }) => (
-            <th className="bg-surface-container px-4 py-2 text-left font-semibold text-on-surface border-b border-outline-variant/20 text-xs uppercase tracking-wider">
-              {children}
-            </th>
-          ),
-          td: ({ children }) => (
-            <td className="px-4 py-2 text-on-surface-variant border-b border-outline-variant/10 text-sm">
-              {children}
-            </td>
-          ),
-        }}
-      >
-        {content}
-      </ReactMarkdown>
-    </div>
+    <div
+      className={className}
+      dangerouslySetInnerHTML={{ __html: html }}
+      style={{ lineHeight: 1.75 }}
+    />
   )
+}
+
+function parseMarkdown(md: string): string {
+  const lines = md.split('\n')
+  const output: string[] = []
+  let inCodeBlock = false
+  let codeLang = ''
+  let codeLines: string[] = []
+  let inList = false
+
+  const closeList = () => {
+    if (inList) {
+      output.push('</ul>')
+      inList = false
+    }
+  }
+
+  for (let i = 0; i < lines.length; i++) {
+    const raw = lines[i]
+
+    // ── Fenced code blocks ────────────────────────────────────────
+    if (raw.trimStart().startsWith('```')) {
+      if (!inCodeBlock) {
+        closeList()
+        inCodeBlock = true
+        codeLang = raw.trim().slice(3).trim()
+        codeLines = []
+      } else {
+        inCodeBlock = false
+        const code = escapeHtml(codeLines.join('\n'))
+        output.push(
+          `<pre style="background:#0d1117;border-radius:10px;padding:16px;overflow-x:auto;margin-bottom:16px;border:1px solid rgba(255,255,255,0.08)"><code style="color:#7dd3a8;font-family:monospace;font-size:13px">${code}</code></pre>`
+        )
+      }
+      continue
+    }
+
+    if (inCodeBlock) {
+      codeLines.push(raw)
+      continue
+    }
+
+    // ── Headings ──────────────────────────────────────────────────
+    if (raw.startsWith('#### ')) {
+      closeList()
+      output.push(`<h4 style="font-size:13px;font-weight:600;color:var(--md-on-surface,#e2e8f0);margin:16px 0 8px">${inlineFormat(raw.slice(5))}</h4>`)
+      continue
+    }
+    if (raw.startsWith('### ')) {
+      closeList()
+      output.push(`<h3 style="font-size:12px;font-weight:700;color:#a78bfa;margin:24px 0 8px;text-transform:uppercase;letter-spacing:.08em">${inlineFormat(raw.slice(4))}</h3>`)
+      continue
+    }
+    if (raw.startsWith('## ')) {
+      closeList()
+      output.push(`<h2 style="font-size:18px;font-weight:700;color:#f1f5f9;margin:32px 0 12px;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,0.08)">${inlineFormat(raw.slice(3))}</h2>`)
+      continue
+    }
+    if (raw.startsWith('# ')) {
+      closeList()
+      output.push(`<h1 style="font-size:22px;font-weight:700;color:#f8fafc;margin:16px 0 12px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.12)">${inlineFormat(raw.slice(2))}</h1>`)
+      continue
+    }
+
+    // ── Horizontal rule ───────────────────────────────────────────
+    if (raw.trim() === '---' || raw.trim() === '***' || raw.trim() === '___') {
+      closeList()
+      output.push('<hr style="border:none;border-top:1px solid rgba(255,255,255,0.1);margin:24px 0" />')
+      continue
+    }
+
+    // ── List items ────────────────────────────────────────────────
+    const listMatch = raw.match(/^(\s*)([-*+]|\d+\.) (.*)/)
+    if (listMatch) {
+      if (!inList) {
+        output.push('<ul style="list-style:none;padding:0;margin:0 0 16px">')
+        inList = true
+      }
+      output.push(
+        `<li style="display:flex;gap:8px;align-items:flex-start;margin-bottom:6px;font-size:13px;color:#94a3b8;line-height:1.7"><span style="color:#a78bfa;flex-shrink:0;margin-top:4px">▸</span><span>${inlineFormat(listMatch[3])}</span></li>`
+      )
+      continue
+    }
+
+    // ── Blank line ────────────────────────────────────────────────
+    if (raw.trim() === '') {
+      closeList()
+      output.push('<div style="margin-bottom:8px"></div>')
+      continue
+    }
+
+    // ── Paragraph ─────────────────────────────────────────────────
+    closeList()
+    output.push(
+      `<p style="color:#94a3b8;font-size:13px;line-height:1.75;margin-bottom:12px">${inlineFormat(raw)}</p>`
+    )
+  }
+
+  closeList()
+  return output.join('\n')
+}
+
+function inlineFormat(text: string): string {
+  // Bold+italic ***text***
+  text = text.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
+  // Bold **text**
+  text = text.replace(/\*\*(.+?)\*\*/g, '<strong style="color:#e2e8f0;font-weight:600">$1</strong>')
+  // Italic *text* or _text_
+  text = text.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em style="color:#a78bfa;font-style:italic">$1</em>')
+  text = text.replace(/_(.+?)_/g, '<em style="color:#a78bfa;font-style:italic">$1</em>')
+  // Inline code `text`
+  text = text.replace(/`([^`]+)`/g, '<code style="background:rgba(167,139,250,0.1);color:#a78bfa;padding:1px 6px;border-radius:4px;font-family:monospace;font-size:0.85em;border:1px solid rgba(167,139,250,0.2)">$1</code>')
+  // Links [text](url)
+  text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" style="color:#a78bfa;text-decoration:underline" target="_blank" rel="noopener noreferrer">$1</a>')
+  return text
+}
+
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
