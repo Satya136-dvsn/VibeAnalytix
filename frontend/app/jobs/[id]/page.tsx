@@ -1,5 +1,6 @@
 'use client'
 
+
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { useAppStore } from '@/lib/store'
@@ -107,7 +108,7 @@ export default function JobResultsPage() {
   const params = useParams()
   const jobId = params.id as string
 
-  const { isAuthenticated, user, pollJobStatus, getJobResults, retryJob, logout } = useAppStore()
+  const { isAuthenticated, isLoading, user, pollJobStatus, getJobResults, retryJob, logout } = useAppStore()
   const [tab, setTab] = useState<'overview' | 'structure' | 'flow'>('overview')
   const [status, setStatus] = useState<any>(null)
   const [results, setResults] = useState<any>(null)
@@ -124,15 +125,17 @@ export default function JobResultsPage() {
 
   useEffect(() => {
 
-    if (!isAuthenticated) {
+    if (!isLoading && !isAuthenticated) {
       router.push('/auth')
       return
     }
 
-    fetchStatus()
-    const pollInterval = setInterval(fetchStatus, 3000)
-    return () => clearInterval(pollInterval)
-  }, [isAuthenticated, jobId])
+    if (isAuthenticated) {
+      fetchStatus()
+      const pollInterval = setInterval(fetchStatus, 3000)
+      return () => clearInterval(pollInterval)
+    }
+  }, [isAuthenticated, isLoading, jobId])
 
   const fetchStatus = async () => {
     try {
@@ -230,7 +233,7 @@ export default function JobResultsPage() {
             </div>
           </div>
         </div>
-        <button onClick={() => router.push('/')} className="bg-gradient-to-r from-primary to-primary-dim text-on-primary py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 mb-4 hover:brightness-110 active:scale-95 transition-all shadow-[0_0_20px_rgba(182,160,255,0.2)]">
+        <button onClick={() => router.push('/dashboard')} className="bg-gradient-to-r from-primary to-primary-dim text-on-primary py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 mb-4 hover:brightness-110 active:scale-95 transition-all shadow-[0_0_20px_rgba(182,160,255,0.2)]">
           <span className="material-symbols-outlined text-sm">add</span> New Analysis
         </button>
         <nav className="flex-1 flex flex-col gap-1">

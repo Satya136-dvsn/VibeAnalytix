@@ -7,19 +7,20 @@ import { Github, Upload, LogOut, CheckCircle2, AlertCircle, FileArchive } from '
 
 export default function SubmissionPage() {
   const router = useRouter()
-  const { isAuthenticated, user, logout, submitJob, pollJobStatus } = useAppStore()
+  const { isAuthenticated, isLoading, user, logout, submitJob, pollJobStatus } = useAppStore()
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.push('/auth')
+    }
+  }, [isAuthenticated, isLoading, router])
+
   const [loading, setLoading] = useState(false)
   const [githubUrl, setGithubUrl] = useState('')
   const [zipFile, setZipFile] = useState<File | null>(null)
   const [error, setError] = useState('')
   const [mode, setMode] = useState<'github' | 'zip'>('github')
   const [recentJobs, setRecentJobs] = useState<any[]>([])
-
-  useEffect(() => {
-    if (!isAuthenticated) {
-      router.push('/auth')
-    }
-  }, [isAuthenticated, router])
 
   const handleSubmitGithub = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -63,7 +64,7 @@ export default function SubmissionPage() {
     }
   }
 
-  if (!isAuthenticated) {
+  if (isLoading || !isAuthenticated) {
     return null
   }
 
