@@ -1,0 +1,22 @@
+
+> vibeanalytix-frontend@0.1.0 build
+> next build
+
+  ▲ Next.js 14.2.35
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Linting and checking validity of types ...
+Failed to compile.
+
+./app/jobs/[id]/page.tsx:189:15
+Type error: Property 'api' does not exist on type 'typeof import("C:/VibeAnalytix/frontend/lib/api")'.
+
+[0m [90m 187 |[39m[0m
+[0m [90m 188 |[39m     [36mtry[39m {[0m
+[0m[31m[1m>[22m[39m[90m 189 |[39m       [36mconst[39m { api } [33m=[39m [36mawait[39m [36mimport[39m([32m'@/lib/api'[39m)[0m
+[0m [90m     |[39m               [31m[1m^[22m[39m[0m
+[0m [90m 190 |[39m       [36mconst[39m res [33m=[39m [36mawait[39m api[33m.[39mchatWithRepo(jobId[33m,[39m query)[0m
+[0m [90m 191 |[39m       setChatHistory(prev [33m=>[39m [[33m...[39mprev[33m,[39m { role[33m:[39m [32m'assistant'[39m[33m,[39m content[33m:[39m res[33m.[39manswer[33m,[39m sources[33m:[39m res[33m.[39msources }])[0m
+[0m [90m 192 |[39m     } [36mcatch[39m (err[33m:[39m any) {[0m
+Next.js build worker exited with code: 1 and signal: null

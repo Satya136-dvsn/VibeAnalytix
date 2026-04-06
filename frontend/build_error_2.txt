@@ -1,0 +1,22 @@
+
+> vibeanalytix-frontend@0.1.0 build
+> next build
+
+  ▲ Next.js 14.2.35
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Linting and checking validity of types ...
+Failed to compile.
+
+./app/jobs/[id]/page.tsx:126:9
+Type error: Cannot find name 'isCheckingAuth'.
+
+[0m [90m 124 |[39m[0m
+[0m [90m 125 |[39m   useEffect(() [33m=>[39m {[0m
+[0m[31m[1m>[22m[39m[90m 126 |[39m     [36mif[39m (isCheckingAuth) [36mreturn[39m[0m
+[0m [90m     |[39m         [31m[1m^[22m[39m[0m
+[0m [90m 127 |[39m     [36mif[39m ([33m![39misAuthenticated) {[0m
+[0m [90m 128 |[39m       router[33m.[39mpush([32m'/auth'[39m)[0m
+[0m [90m 129 |[39m       [36mreturn[39m[0m
+Next.js build worker exited with code: 1 and signal: null

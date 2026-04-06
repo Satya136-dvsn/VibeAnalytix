@@ -1,0 +1,22 @@
+
+> vibeanalytix-frontend@0.1.0 build
+> next build
+
+  ▲ Next.js 14.2.35
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Linting and checking validity of types ...
+Failed to compile.
+
+./app/jobs/[id]/page.tsx:110:34
+Type error: Property 'isCheckingAuth' does not exist on type 'AppStore'.
+
+[0m [90m 108 |[39m   [36mconst[39m jobId [33m=[39m params[33m.[39mid [36mas[39m string[0m
+[0m [90m 109 |[39m[0m
+[0m[31m[1m>[22m[39m[90m 110 |[39m   [36mconst[39m { isAuthenticated[33m,[39m user[33m,[39m isCheckingAuth[33m,[39m pollJobStatus[33m,[39m getJobResults[33m,[39m retryJob[33m,[39m logout } [33m=[39m useAppStore()[0m
+[0m [90m     |[39m                                  [31m[1m^[22m[39m[0m
+[0m [90m 111 |[39m   [36mconst[39m [tab[33m,[39m setTab] [33m=[39m useState[33m<[39m[32m'overview'[39m [33m|[39m [32m'structure'[39m [33m|[39m [32m'flow'[39m[33m>[39m([32m'overview'[39m)[0m
+[0m [90m 112 |[39m   [36mconst[39m [status[33m,[39m setStatus] [33m=[39m useState[33m<[39m[33many[39m[33m>[39m([36mnull[39m)[0m
+[0m [90m 113 |[39m   [36mconst[39m [results[33m,[39m setResults] [33m=[39m useState[33m<[39m[33many[39m[33m>[39m([36mnull[39m)[0m
+Next.js build worker exited with code: 1 and signal: null

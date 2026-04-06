@@ -1,0 +1,22 @@
+
+> vibeanalytix-frontend@0.1.0 build
+> next build
+
+  ▲ Next.js 14.2.35
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Linting and checking validity of types ...
+Failed to compile.
+
+./app/jobs/[id]/page.tsx:135:24
+Type error: Cannot find name 'isCheckingAuth'.
+
+[0m [90m 133 |[39m     [36mconst[39m pollInterval [33m=[39m setInterval(fetchStatus[33m,[39m [35m3000[39m)[0m
+[0m [90m 134 |[39m     [36mreturn[39m () [33m=>[39m clearInterval(pollInterval)[0m
+[0m[31m[1m>[22m[39m[90m 135 |[39m   }[33m,[39m [isAuthenticated[33m,[39m isCheckingAuth[33m,[39m jobId])[0m
+[0m [90m     |[39m                        [31m[1m^[22m[39m[0m
+[0m [90m 136 |[39m[0m
+[0m [90m 137 |[39m   [36mconst[39m fetchStatus [33m=[39m [36masync[39m () [33m=>[39m {[0m
+[0m [90m 138 |[39m     [36mtry[39m {[0m
+Next.js build worker exited with code: 1 and signal: null

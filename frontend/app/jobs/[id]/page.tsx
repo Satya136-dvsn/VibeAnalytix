@@ -107,7 +107,7 @@ export default function JobResultsPage() {
   const params = useParams()
   const jobId = params.id as string
 
-  const { isAuthenticated, user, isCheckingAuth, pollJobStatus, getJobResults, retryJob, logout } = useAppStore()
+  const { isAuthenticated, user, pollJobStatus, getJobResults, retryJob, logout } = useAppStore()
   const [tab, setTab] = useState<'overview' | 'structure' | 'flow'>('overview')
   const [status, setStatus] = useState<any>(null)
   const [results, setResults] = useState<any>(null)
@@ -123,7 +123,7 @@ export default function JobResultsPage() {
   const [chatLoading, setChatLoading] = useState(false)
 
   useEffect(() => {
-    if (isCheckingAuth) return
+
     if (!isAuthenticated) {
       router.push('/auth')
       return
@@ -132,7 +132,7 @@ export default function JobResultsPage() {
     fetchStatus()
     const pollInterval = setInterval(fetchStatus, 3000)
     return () => clearInterval(pollInterval)
-  }, [isAuthenticated, isCheckingAuth, jobId])
+  }, [isAuthenticated, jobId])
 
   const fetchStatus = async () => {
     try {
@@ -186,8 +186,8 @@ export default function JobResultsPage() {
     setChatLoading(true)
 
     try {
-      const { api } = await import('@/lib/api')
-      const res = await api.chatWithRepo(jobId, query)
+      const { apiClient } = await import('@/lib/api')
+      const res = await apiClient.chatWithRepo(jobId, query)
       setChatHistory(prev => [...prev, { role: 'assistant', content: res.answer, sources: res.sources }])
     } catch (err: any) {
       console.error(err)
