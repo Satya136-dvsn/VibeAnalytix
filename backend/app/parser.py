@@ -199,6 +199,11 @@ class TreeSitterParser:
         """Extract function definitions from AST."""
         functions = []
 
+        if isinstance(ast, tuple):
+            ast = ast[0] if ast else None
+        if not ast:
+            return functions
+
         FUNC_NODE_TYPES = {
             "python": ("function_definition", "async_function_definition"),
             "javascript": ("function_declaration", "function_expression", "arrow_function", "method_definition"),
@@ -212,10 +217,14 @@ class TreeSitterParser:
         func_types = FUNC_NODE_TYPES.get(language, ())
 
         def traverse(node: Node):
+            if not node or not hasattr(node, "type"):
+                return
+            children = getattr(node, "children", []) or []
+
             if node.type in func_types:
                 # Find identifier/name node
                 name = None
-                for child in node.children:
+                for child in children:
                     if child.type in ("identifier", "property_identifier", "field_identifier"):
                         try:
                             name = child.text.decode("utf-8")
@@ -230,7 +239,7 @@ class TreeSitterParser:
                         line_end=node.end_point[0] + 1,
                     ))
 
-            for child in node.children:
+            for child in children:
                 traverse(child)
 
         traverse(ast)
@@ -239,6 +248,11 @@ class TreeSitterParser:
     def extract_classes(self, ast: Node, language: str) -> list[ClassDef]:
         """Extract class definitions from AST."""
         classes = []
+
+        if isinstance(ast, tuple):
+            ast = ast[0] if ast else None
+        if not ast:
+            return classes
 
         CLASS_NODE_TYPES = {
             "python": ("class_definition",),
@@ -253,9 +267,13 @@ class TreeSitterParser:
         class_types = CLASS_NODE_TYPES.get(language, ())
 
         def traverse(node: Node):
+            if not node or not hasattr(node, "type"):
+                return
+            children = getattr(node, "children", []) or []
+
             if node.type in class_types:
                 name = None
-                for child in node.children:
+                for child in children:
                     if child.type in ("identifier", "type_identifier"):
                         try:
                             name = child.text.decode("utf-8")
@@ -270,7 +288,7 @@ class TreeSitterParser:
                         line_end=node.end_point[0] + 1,
                     ))
 
-            for child in node.children:
+            for child in children:
                 traverse(child)
 
         traverse(ast)
@@ -280,11 +298,20 @@ class TreeSitterParser:
         """Extract import statements from AST."""
         imports = []
 
+        if isinstance(ast, tuple):
+            ast = ast[0] if ast else None
+        if not ast:
+            return imports
+
         def traverse(node: Node):
+            if not node or not hasattr(node, "type"):
+                return
+            children = getattr(node, "children", []) or []
+
             if language == "python":
                 if node.type in ("import_statement", "import_from_statement"):
                     module = ""
-                    for child in node.children:
+                    for child in children:
                         if child.type in ("dotted_name", "relative_import"):
                             try:
                                 module = child.text.decode("utf-8")
@@ -296,7 +323,7 @@ class TreeSitterParser:
 
             elif language in ("javascript", "typescript"):
                 if node.type == "import_statement":
-                    for child in node.children:
+                    for child in children:
                         if child.type == "string":
                             try:
                                 val = child.text.decode("utf-8").strip("'\"")
@@ -307,7 +334,7 @@ class TreeSitterParser:
 
             elif language == "java":
                 if node.type == "import_declaration":
-                    for child in node.children:
+                    for child in children:
                         if child.type == "scoped_identifier":
                             try:
                                 imports.append(ImportDef(module=child.text.decode("utf-8")))
@@ -317,7 +344,7 @@ class TreeSitterParser:
 
             elif language == "go":
                 if node.type == "import_spec":
-                    for child in node.children:
+                    for child in children:
                         if child.type == "interpreted_string_literal":
                             try:
                                 val = child.text.decode("utf-8").strip('"')
@@ -326,7 +353,7 @@ class TreeSitterParser:
                             imports.append(ImportDef(module=val))
                             break
 
-            for child in node.children:
+            for child in children:
                 traverse(child)
 
         traverse(ast)
@@ -457,15 +484,19 @@ async def parse_repository(temp_dir: Path) -> list[ParsedFile]:
 
 def pretty_print(ast: Node, language: str) -> str:
     """Serialize AST back to normalized source code."""
+    if isinstance(ast, tuple):
+        ast = ast[0] if ast else None
+
     def reconstruct_ast(node: Node, indent: int = 0) -> str:
         if not node:
             return ""
-        if not node.children:
+        children = getattr(node, "children", []) or []
+        if not children:
             text = node.text
             if isinstance(text, bytes):
                 text = text.decode("utf-8")
             return text
-        parts = [reconstruct_ast(child) for child in node.children if child]
+        parts = [reconstruct_ast(child) for child in children if child]
         result = "".join(parts)
         lines = [line.rstrip() for line in result.split("\n")]
         return "\n".join(lines).strip()

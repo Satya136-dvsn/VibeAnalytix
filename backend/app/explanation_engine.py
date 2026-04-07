@@ -18,6 +18,7 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.llm_provider import LLMProviderService
+from app.config import settings  # Kept for backwards-compatible test patching
 from app.knowledge_builder import KnowledgeGraph
 from app.schemas import ExplanationSet
 from app.embeddings import generate_embedding
@@ -46,6 +47,7 @@ class ExplanationEngine:
         self.provider = LLMProviderService(api_key=api_key)
         self.gemini_mode = self.provider.gemini_mode
         self.model = self.provider.model
+        self.retry_delays = self.provider.retry_delays
 
     async def _retry_with_backoff(
         self, coro_factory, max_retries: int = 3

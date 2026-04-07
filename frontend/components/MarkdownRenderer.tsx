@@ -122,6 +122,9 @@ function parseMarkdown(md: string): string {
 }
 
 function inlineFormat(text: string): string {
+  // Always escape user-controlled text first to prevent raw HTML injection.
+  text = escapeHtml(text)
+
   // Bold+italic ***text***
   text = text.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
   // Bold **text**
@@ -132,8 +135,37 @@ function inlineFormat(text: string): string {
   // Inline code `text`
   text = text.replace(/`([^`]+)`/g, '<code style="background:rgba(167,139,250,0.1);color:#a78bfa;padding:1px 6px;border-radius:4px;font-family:monospace;font-size:0.85em;border:1px solid rgba(167,139,250,0.2)">$1</code>')
   // Links [text](url)
-  text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" style="color:#a78bfa;text-decoration:underline" target="_blank" rel="noopener noreferrer">$1</a>')
+  text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, label: string, url: string) => {
+    const safeHref = sanitizeUrl(url)
+    return `<a href="${safeHref}" style="color:#a78bfa;text-decoration:underline" target="_blank" rel="noopener noreferrer">${label}</a>`
+  })
   return text
+}
+
+function sanitizeUrl(url: string): string {
+  const normalized = url.trim().replace(/&amp;/g, '&')
+  if (!normalized) return '#'
+
+  // Allow only safe absolute schemes and safe relative links.
+  if (
+    normalized.startsWith('/') ||
+    normalized.startsWith('#') ||
+    normalized.startsWith('./') ||
+    normalized.startsWith('../')
+  ) {
+    return escapeAttribute(normalized)
+  }
+
+  const lower = normalized.toLowerCase()
+  if (lower.startsWith('https://') || lower.startsWith('http://') || lower.startsWith('mailto:')) {
+    return escapeAttribute(normalized)
+  }
+
+  return '#'
+}
+
+function escapeAttribute(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
 
 function escapeHtml(s: string): string {

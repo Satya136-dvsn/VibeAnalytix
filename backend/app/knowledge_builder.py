@@ -122,6 +122,7 @@ class KnowledgeBuilder:
             Exception: If all retries fail
         """
         prompts = {
+            "general": "Provide a concise technical summary of this code element:\n\n",
             "function": "Provide a brief, 1-2 sentence summary of this function's purpose and key logic:\n\n",
             "file": "Provide a brief 2-3 sentence summary of this file's role in the project, based on its contained functions:\n\n",
             "module": "Provide a brief 2-3 sentence summary of this module's (directory's) purpose and responsibilities:\n\n",
@@ -446,7 +447,11 @@ Module Summaries:
             modules=self.module_summaries,
         )
 
-    async def build(self) -> KnowledgeGraph:
+    def build(self) -> KnowledgeGraph:
+        """Synchronous compatibility wrapper used by legacy tests."""
+        return asyncio.run(self.build_async())
+
+    async def build_async(self) -> KnowledgeGraph:
         """
         Build complete knowledge graph asynchronously.
 
@@ -483,7 +488,7 @@ async def build_knowledge(
         Complete knowledge graph
     """
     builder = KnowledgeBuilder(parsed_files, analysis)
-    return await builder.build()
+    return await builder.build_async()
 
 
 async def generate_and_store_embeddings(

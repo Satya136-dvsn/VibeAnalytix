@@ -14,6 +14,7 @@ RUN groupadd -g 10001 app && useradd -u 10001 -g app -m app
 
 # Copy backend code
 COPY backend/pyproject.toml .
+RUN pip install --no-cache-dir --upgrade pip wheel
 RUN pip install --no-cache-dir -e .
 
 COPY backend/ .

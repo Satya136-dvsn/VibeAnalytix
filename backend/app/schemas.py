@@ -49,8 +49,8 @@ class JobStatusResponse(BaseModel):
     """Job status response."""
 
     job_id: UUID
-    source_type: str
-    source_ref: str
+    source_type: Optional[str] = None
+    source_ref: Optional[str] = None
     status: Literal["queued", "in_progress", "completed", "failed"]
     current_stage: Optional[str] = None
     progress_pct: int
