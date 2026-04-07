@@ -4,7 +4,7 @@ Authentication router for user registration and login endpoints.
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 
 from app.auth import (
     create_jwt_token,
@@ -12,8 +12,10 @@ from app.auth import (
     verify_password,
     get_current_user,
 )
+from app.config import settings, parse_csv_setting
 from app.database import get_session
 from app.models import User
+from app.rate_limiter import enforce_sliding_window_limit, RateLimitError
 from app.schemas import (
     UserRegisterRequest,
     UserLoginRequest,
@@ -26,6 +28,20 @@ from app.schemas import (
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
 
+def _get_client_ip(request: Request) -> str:
+    """Resolve client IP with proxy-aware fallback."""
+    remote_ip = request.client.host if request.client and request.client.host else "unknown"
+    trusted_proxies = set(parse_csv_setting(settings.trusted_proxy_ips))
+
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded and remote_ip in trusted_proxies:
+        return forwarded.split(",")[0].strip()
+
+    if remote_ip:
+        return remote_ip
+    return "unknown"
+
+
 @router.post(
     "/register",
     response_model=UserResponse,
@@ -36,6 +52,7 @@ router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 )
 async def register(
     request: UserRegisterRequest,
+    raw_request: Request,
     session: AsyncSession = Depends(get_session),
 ) -> UserResponse:
     """
@@ -52,6 +69,21 @@ async def register(
         HTTPException 409: If email already exists
         HTTPException 400: If validation fails
     """
+    try:
+        await enforce_sliding_window_limit(
+            key=f"rate_limit:auth:register:ip:{_get_client_ip(raw_request)}",
+            limit=settings.rate_limit_register_per_hour,
+            window_seconds=3600,
+        )
+    except RateLimitError:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=(
+                f"Rate limit exceeded: "
+                f"{settings.rate_limit_register_per_hour} registration attempts per hour"
+            ),
+        )
+
     # Check if user already exists
     stmt = select(User).where(User.email == request.email.lower())
     result = await session.execute(stmt)
@@ -88,6 +120,7 @@ async def register(
 )
 async def login(
     request: UserLoginRequest,
+    raw_request: Request,
     session: AsyncSession = Depends(get_session),
 ) -> TokenResponse:
     """
@@ -103,6 +136,21 @@ async def login(
     Raises:
         HTTPException 401: If credentials are invalid
     """
+    try:
+        await enforce_sliding_window_limit(
+            key=f"rate_limit:auth:login:ip:{_get_client_ip(raw_request)}",
+            limit=settings.rate_limit_login_per_minute,
+            window_seconds=60,
+        )
+    except RateLimitError:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=(
+                f"Rate limit exceeded: "
+                f"{settings.rate_limit_login_per_minute} login attempts per minute"
+            ),
+        )
+
     # Find user by email
     stmt = select(User).where(User.email == request.email.lower())
     result = await session.execute(stmt)

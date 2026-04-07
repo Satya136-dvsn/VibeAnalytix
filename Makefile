@@ -1,4 +1,4 @@
-.PHONY: help setup install-backend install-frontend test test-unit test-property lint format clean docker-up docker-down
+.PHONY: help setup install-backend install-frontend test test-unit test-property lint format clean docker-up docker-down docker-prod-up docker-prod-down docker-prod-logs
 
 help:
 	@echo "VibeAnalytix Development Commands"
@@ -15,6 +15,9 @@ help:
 	@echo "docker-up          - Start Docker Compose services"
 	@echo "docker-down        - Stop Docker Compose services"
 	@echo "docker-logs        - View Docker logs"
+	@echo "docker-prod-up     - Start production Docker Compose stack"
+	@echo "docker-prod-down   - Stop production Docker Compose stack"
+	@echo "docker-prod-logs   - View production stack logs"
 	@echo "dev-backend        - Run backend dev server"
 	@echo "dev-frontend       - Run frontend dev server"
 	@echo "dev-worker         - Run Celery worker"
@@ -62,6 +65,15 @@ docker-down:
 
 docker-logs:
 	docker-compose logs -f
+
+docker-prod-up:
+	docker compose -f docker-compose.prod.yml up -d --build
+
+docker-prod-down:
+	docker compose -f docker-compose.prod.yml down
+
+docker-prod-logs:
+	docker compose -f docker-compose.prod.yml logs -f
 
 docker-restart:
 	docker-compose restart

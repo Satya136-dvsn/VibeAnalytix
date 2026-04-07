@@ -13,8 +13,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 
 from app.auth import get_current_user
+from app.config import settings
 from app.database import get_session
 from app.models import User, Job, ProjectResult, FileSummary
+from app.rate_limiter import enforce_sliding_window_limit, RateLimitError
 from app.redis_store import get_redis
 from app.schemas import (
     JobSubmissionResponse,
@@ -147,21 +149,20 @@ async def submit_job(
             detail="Only one of github_url or zip_file can be provided",
         )
 
-    # Check rate limit (10 jobs per hour)
-    from datetime import datetime, timedelta
-    one_hour_ago = datetime.utcnow() - timedelta(hours=1)
-
-    stmt = select(Job).where(
-        (Job.user_id == user.id) &
-        (Job.created_at >= one_hour_ago)
-    )
-    result = await session.execute(stmt)
-    recent_jobs = result.scalars().all()
-
-    if len(recent_jobs) >= 10:
+    # Redis sliding-window rate limit (production-safe)
+    try:
+        await enforce_sliding_window_limit(
+            key=f"rate_limit:jobs:user:{user.id}",
+            limit=settings.rate_limit_jobs_per_hour,
+            window_seconds=3600,
+        )
+    except RateLimitError:
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail="Rate limit exceeded: 10 jobs per hour",
+            detail=(
+                f"Rate limit exceeded: "
+                f"{settings.rate_limit_jobs_per_hour} job submissions per hour"
+            ),
         )
 
     # Check idempotency — if key exists, return existing job
@@ -513,6 +514,21 @@ async def chat_with_repo(
         
     if job.status != "completed":
         raise HTTPException(status_code=400, detail="Job must be completed to chat")
+
+    try:
+        await enforce_sliding_window_limit(
+            key=f"rate_limit:chat:user:{user.id}",
+            limit=settings.rate_limit_chat_per_minute,
+            window_seconds=60,
+        )
+    except RateLimitError:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=(
+                f"Rate limit exceeded: "
+                f"{settings.rate_limit_chat_per_minute} chat requests per minute"
+            ),
+        )
 
     try:
         # Generate query embedding

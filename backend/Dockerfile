@@ -5,14 +5,23 @@ WORKDIR /app
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     git \
+    curl \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user for runtime
+RUN groupadd -g 10001 app && useradd -u 10001 -g app -m app
 
 # Copy backend code
 COPY backend/pyproject.toml .
 RUN pip install --no-cache-dir -e .
 
 COPY backend/ .
+
+# Ensure app user owns runtime files
+RUN chown -R app:app /app
+
+USER app
 
 # Expose port
 EXPOSE 8000

@@ -20,6 +20,11 @@ class Settings(BaseSettings):
     api_host: str = "0.0.0.0"
     api_port: int = 8000
     debug: bool = False
+    enable_api_docs: bool = True
+    enforce_https: bool = False
+    cors_allowed_origins: str = "http://localhost:3000"
+    trusted_hosts: str = "localhost,127.0.0.1"
+    trusted_proxy_ips: str = "127.0.0.1,::1"
 
     # JWT
     jwt_secret: str
@@ -42,6 +47,9 @@ class Settings(BaseSettings):
 
     # Application
     rate_limit_jobs_per_hour: int = 10
+    rate_limit_login_per_minute: int = 20
+    rate_limit_register_per_hour: int = 5
+    rate_limit_chat_per_minute: int = 30
     cleanup_timeout_minutes: int = 30
     cleanup_sla_minutes: int = 10
     watchdog_interval_minutes: int = 5
@@ -58,3 +66,8 @@ class Settings(BaseSettings):
 
 # Global settings instance
 settings = Settings()
+
+
+def parse_csv_setting(value: str) -> list[str]:
+    """Parse comma-separated settings into a normalized list."""
+    return [item.strip() for item in value.split(",") if item.strip()]
