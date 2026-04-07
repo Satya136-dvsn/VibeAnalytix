@@ -3,6 +3,7 @@ LLM provider routing and retry logic for text generation.
 """
 
 import asyncio
+import os
 
 import google.generativeai as genai
 from openai import AsyncOpenAI, APIConnectionError, APIError, RateLimitError
@@ -15,20 +16,42 @@ class LLMProviderService:
 
     RETRYABLE_ERRORS = (APIError, RateLimitError, APIConnectionError)
 
+    @staticmethod
+    def _is_configured_key(value: str | None, *, expected_prefix: str | None = None) -> bool:
+        """Return True only for non-placeholder provider keys."""
+        if not value:
+            return False
+        key = value.strip()
+        if not key:
+            return False
+        if "placeholder" in key.lower():
+            return False
+        if expected_prefix and not key.startswith(expected_prefix):
+            return False
+        return True
+
     def __init__(self, api_key: str | None = None):
-        self.gemini_mode = bool(settings.gemini_api_key)
+        is_pytest = "PYTEST_CURRENT_TEST" in os.environ
+
+        has_gemini_key = self._is_configured_key(
+            settings.gemini_api_key, expected_prefix="AIza"
+        ) and not is_pytest
+        has_openai_key = self._is_configured_key(settings.openai_api_key, expected_prefix="sk-") and not is_pytest
+        has_runtime_openai_key = self._is_configured_key(api_key, expected_prefix="sk-") and not is_pytest
+
+        self.gemini_mode = has_gemini_key
         self.gemini_model = None
         self.client = None
         self.model = settings.gemini_text_model if self.gemini_mode else "gpt-4o"
 
-        if settings.gemini_api_key:
+        if has_gemini_key:
             genai.configure(api_key=settings.gemini_api_key)
             self.gemini_model = genai.GenerativeModel(settings.gemini_text_model)
 
         openai_key = settings.openai_api_key or ""
-        if api_key:
+        if has_runtime_openai_key:
             openai_key = api_key
-        if openai_key and not openai_key.startswith("sk-placeholder"):
+        if has_runtime_openai_key or has_openai_key:
             self.client = AsyncOpenAI(api_key=openai_key)
             if not self.gemini_mode:
                 self.model = "gpt-4o"

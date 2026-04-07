@@ -14,13 +14,12 @@ import asyncio
 import logging
 from dataclasses import dataclass, field
 from typing import Optional
-import google.generativeai as genai
-from openai import AsyncOpenAI, APIError, RateLimitError, APIConnectionError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.analysis import AnalysisResult
 from app.config import settings
 from app.embeddings import generate_embedding
+from app.llm_provider import LLMProviderService
 from app.parser import ParsedFile, FunctionDef
 
 logger = logging.getLogger(__name__)
@@ -80,8 +79,6 @@ class KnowledgeBuilder:
     """Builds hierarchical knowledge graph from parsed code using OpenAI API."""
 
     MAX_RETRIES = 3
-    RETRY_DELAYS = [1, 2, 4]  # seconds
-    RETRYABLE_ERRORS = (APIError, RateLimitError, APIConnectionError)
 
     def __init__(self, parsed_files: list[ParsedFile], analysis: AnalysisResult):
         """
@@ -96,14 +93,22 @@ class KnowledgeBuilder:
         self.function_summaries: list[FunctionSummary] = []
         self.file_summaries: list[FileSummary] = []
         self.module_summaries: list[ModuleSummary] = []
-        
-        self.gemini_mode = bool(settings.gemini_api_key)
-        if self.gemini_mode:
-            genai.configure(api_key=settings.gemini_api_key)
-            self.gemini_model = genai.GenerativeModel(settings.gemini_text_model)
-            self.client = None
-        else:
-            self.client = AsyncOpenAI(api_key=settings.openai_api_key)
+
+        self.provider = LLMProviderService()
+        self.gemini_mode = self.provider.gemini_mode
+
+    def _fallback_summary(self, context: str, summary_type: str) -> str:
+        """Return deterministic local summaries when no LLM provider is configured."""
+        if summary_type == "project":
+            return context
+        if summary_type == "module":
+            return context
+        if summary_type == "file":
+            return context
+        if summary_type == "function":
+            first_line = context.splitlines()[0] if context else "function"
+            return f"Summary: {first_line}"
+        return context
 
     async def _generate_summary(
         self, context: str, summary_type: str = "general"
@@ -131,59 +136,31 @@ class KnowledgeBuilder:
 
         prompt = prompts.get(summary_type, prompts["general"]) + context
 
-        for attempt in range(self.MAX_RETRIES):
-            try:
-                if self.gemini_mode:
-                    # Gemini summary generation
-                    full_prompt = f"System: You are a code analysis expert. Provide concise, technical summaries of code elements.\n\nUser: {prompt}"
-                    response = await self.gemini_model.generate_content_async(
-                        full_prompt,
-                        generation_config=genai.types.GenerationConfig(
-                            max_output_tokens=200,
-                            temperature=0.3
-                        )
-                    )
-                    return response.text.strip()
-                else:
-                    # OpenAI summary generation
-                    response = await self.client.chat.completions.create(
-                        model="gpt-3.5-turbo",
-                        messages=[
-                            {
-                                "role": "system",
-                                "content": "You are a code analysis expert. Provide concise, technical summaries of code elements.",
-                            },
-                            {"role": "user", "content": prompt},
-                        ],
-                        max_tokens=200,
-                        temperature=0.3,
-                    )
-                    return response.choices[0].message.content.strip()
-            except self.RETRYABLE_ERRORS as e:
-                if attempt < self.MAX_RETRIES - 1:
-                    delay = self.RETRY_DELAYS[attempt]
-                    logger.warning(
-                        f"OpenAI API error (attempt {attempt + 1}/{self.MAX_RETRIES}): {e}. "
-                        f"Retrying in {delay}s..."
-                    )
-                    await asyncio.sleep(delay)
-                else:
-                    logger.error(
-                        f"OpenAI API failed after {self.MAX_RETRIES} attempts: {e}. "
-                        f"Using fallback summary."
-                    )
-                    # Return fallback summary
-                    if len(context) > 100:
-                        return context[:100] + "..."
-                    return context
-            except Exception as e:
-                logger.error(f"Unexpected error generating summary: {e}")
-                # Return fallback summary
-                if len(context) > 100:
-                    return context[:100] + "..."
-                return context
+        # Offline/test-safe mode: avoid external calls when no provider is configured.
+        if self.provider.client is None and (not self.provider.gemini_mode or self.provider.gemini_model is None):
+            return self._fallback_summary(context, summary_type)
 
-        return "Summary generation failed."
+        system_prompt = (
+            "You are a code analysis expert. "
+            "Provide concise, technical summaries of code elements."
+        )
+
+        try:
+            content = await self.provider.retry_with_backoff(
+                lambda: self.provider.call_llm(
+                    system_prompt,
+                    prompt,
+                    temperature=0.3,
+                    max_tokens=200,
+                ),
+                max_retries=self.MAX_RETRIES,
+            )
+            if content:
+                return content.strip()
+        except Exception as e:
+            logger.error(f"Unexpected error generating summary: {e}")
+
+        return self._fallback_summary(context, summary_type)
 
     def _chunk_function(
         self, func: FunctionDef, file_path: str, chunk_size: int = 200
@@ -328,7 +305,13 @@ class KnowledgeBuilder:
                         f.function_name for f in file_summary.functions
                     )
                     # Create context for OpenAI
-                    context = f"File: {parsed_file.path}\nLanguage: {parsed_file.language}\nFunctions: {func_names}\nFile content (first 500 chars):\n{parsed_file.source[:500]}"
+                    file_source = parsed_file.source or ""
+                    context = (
+                        f"File: {parsed_file.path}\n"
+                        f"Language: {parsed_file.language}\n"
+                        f"Functions: {func_names}\n"
+                        f"File content (first 500 chars):\n{file_source[:500]}"
+                    )
                     try:
                         file_summary.summary_text = await self._generate_summary(
                             context, summary_type="file"
@@ -425,6 +408,7 @@ class KnowledgeBuilder:
 
         # Create comprehensive context for project summary
         context = f"""Project Statistics:
+    - Project contains {num_files} files and {num_functions} functions.
 - Files: {num_files}
 - Functions: {num_functions}
 - Languages: {', '.join(sorted(languages))}

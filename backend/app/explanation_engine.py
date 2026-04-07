@@ -45,8 +45,10 @@ class ExplanationEngine:
             api_key: LLM API key (if None, use settings)
         """
         self.provider = LLMProviderService(api_key=api_key)
+        self.api_key = api_key
         self.gemini_mode = self.provider.gemini_mode
         self.model = self.provider.model
+        self.max_retries = 3
         self.retry_delays = self.provider.retry_delays
 
     async def _retry_with_backoff(
