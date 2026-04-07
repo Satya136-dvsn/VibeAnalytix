@@ -36,6 +36,7 @@ class Settings(BaseSettings):
     
     # Gemini
     gemini_api_key: Optional[str] = None
+    gemini_text_model: str = "gemini-2.0-flash"
 
     # File size limits (MB)
     max_repo_size_mb: int = 500

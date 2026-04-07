@@ -14,14 +14,13 @@ import json
 import logging
 from typing import Optional
 
-import google.generativeai as genai
-from openai import AsyncOpenAI, APIError, RateLimitError, APIConnectionError
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.llm_provider import LLMProviderService
 from app.knowledge_builder import KnowledgeGraph
 from app.schemas import ExplanationSet
-from app.config import settings
+from app.embeddings import generate_embedding
 from app.vector_store import semantic_retrieval
 
 logger = logging.getLogger(__name__)
@@ -37,9 +36,6 @@ class ExplanationResponseFormat(BaseModel):
 class ExplanationEngine:
     """Generates explanations using OpenAI API with semantic context retrieval."""
 
-    # Retryable OpenAI errors
-    RETRYABLE_ERRORS = (APIError, RateLimitError, APIConnectionError)
-
     def __init__(self, api_key: str = None):
         """
         Initialize explanation engine.
@@ -47,21 +43,9 @@ class ExplanationEngine:
         Args:
             api_key: LLM API key (if None, use settings)
         """
-        self.gemini_mode = bool(settings.gemini_api_key)
-        
-        if self.gemini_mode:
-            self.api_key = api_key or settings.gemini_api_key
-            genai.configure(api_key=self.api_key)
-            self.gemini_model = genai.GenerativeModel("gemini-2.0-flash")
-            self.client = None
-            self.model = "gemini-2.0-flash"
-        else:
-            self.api_key = api_key or settings.openai_api_key
-            self.client = AsyncOpenAI(api_key=self.api_key)
-            self.model = "gpt-4o"
-            
-        self.retry_delays = [1, 2, 4]  # Exponential backoff seconds
-        self.max_retries = 3
+        self.provider = LLMProviderService(api_key=api_key)
+        self.gemini_mode = self.provider.gemini_mode
+        self.model = self.provider.model
 
     async def _retry_with_backoff(
         self, coro_factory, max_retries: int = 3
@@ -79,87 +63,61 @@ class ExplanationEngine:
         Raises:
             Exception: If all retries are exhausted
         """
-        last_error = None
-
-        for attempt in range(max_retries):
-            try:
-                return await coro_factory()
-            except self.RETRYABLE_ERRORS as e:
-                last_error = e
-                if attempt < max_retries - 1:
-                    delay = self.retry_delays[attempt]
-                    logger.warning(
-                        f"OpenAI API error (attempt {attempt + 1}/{max_retries}): {e}. "
-                        f"Retrying in {delay}s..."
-                    )
-                    await asyncio.sleep(delay)
-                    continue
-                # Final attempt failed
-                logger.error(
-                    f"OpenAI API call failed after {max_retries} attempts: {e}"
-                )
-                raise
-            except Exception as e:
-                # Non-retryable error, raise immediately
-                raise
+        return await self.provider.retry_with_backoff(coro_factory, max_retries=max_retries)
 
     async def _call_openai_structured(
         self, system_prompt: str, user_prompt: str, response_format: type[BaseModel] = ExplanationResponseFormat
-    ) -> str:
+    ) -> dict:
         """
         Make a single chat completion call with structured output.
         """
-        if self.gemini_mode:
-            # Gemini structured call
-            prompt = f"{system_prompt}\n\n{user_prompt}\n\nPlease respond in valid JSON matching this schema: {response_format.model_json_schema()}"
-            response = await self.gemini_model.generate_content_async(
-                prompt,
-                generation_config=genai.types.GenerationConfig(response_mime_type="application/json")
-            )
-            content = response.text
-        else:
-            # OpenAI structured call
-            response = await self.client.chat.completions.create(
-                model=self.model,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt},
-                ],
-                response_format={"type": "json_object", "schema": response_format.model_json_schema()},
-                temperature=0.3,
-                max_tokens=2000,
-            )
-            content = response.choices[0].message.content or ""
+        content = await self._call_llm(
+            system_prompt,
+            user_prompt,
+            structured_schema=response_format.model_json_schema(),
+            temperature=0.3,
+            max_tokens=2000,
+        )
             
         # Parse structured response
         try:
             parsed = json.loads(content)
-            return parsed.get("explanation", content)
+            return parsed
         except json.JSONDecodeError:
-            return content
+            return {
+                "explanation": content,
+                "key_points": [],
+                "confidence": 0.0,
+            }
 
-    async def _call_openai(self, system_prompt: str, user_prompt: str) -> str:
+    async def _call_provider_llm(self, system_prompt: str, user_prompt: str) -> str:
         """
-        Make a single chat completion call.
+        Make a single provider-routed chat completion call.
         """
-        if self.gemini_mode:
-            prompt = f"{system_prompt}\n\n{user_prompt}"
-            response = await self.gemini_model.generate_content_async(
-                prompt,
-                generation_config=genai.types.GenerationConfig(temperature=0.3, max_output_tokens=4096)
-            )
-            return response.text
-        else:
-            response = await self.client.chat.completions.create(
-                model=self.model,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt},
-                ],
-                temperature=0.3,
-                max_tokens=4096,
-            )
-            return response.choices[0].message.content or ""
+        return await self.provider.call_llm(
+            system_prompt,
+            user_prompt,
+            temperature=0.3,
+            max_tokens=4096,
+        )
+
+    async def _call_llm(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        *,
+        structured_schema: dict | None = None,
+        temperature: float = 0.3,
+        max_tokens: int = 4096,
+    ) -> str:
+        """Backward-compatible wrapper around provider service."""
+        return await self.provider.call_llm(
+            system_prompt,
+            user_prompt,
+            structured_schema=structured_schema,
+            temperature=temperature,
+            max_tokens=max_tokens,
+        )
 
     async def _retrieve_similar_context(
         self,
@@ -214,20 +172,11 @@ class ExplanationEngine:
 
             query_text = " ".join(query_parts) if query_parts else "code analysis"
 
-            # Generate a real query embedding from the project context
-            if self.gemini_mode:
-                response = await genai.embed_content_async(
-                    model="models/text-embedding-004",
-                    content=query_text[:8000],
-                    task_type="retrieval_query",
-                )
-                query_embedding = response['embedding']
-            else:
-                response = await self.client.embeddings.create(
-                    model="text-embedding-3-small",
-                    input=query_text[:8000],  # Truncate to stay within token limits
-                )
-                query_embedding = response.data[0].embedding
+            # Generate a query embedding with provider/model fallback.
+            query_embedding = await generate_embedding(
+                query_text,
+                task_type="retrieval_query",
+            )
 
             # Use the real embedding for semantic retrieval
             all_summaries = await semantic_retrieval(
@@ -322,35 +271,7 @@ class ExplanationEngine:
             Project overview explanation or None on failure
         """
         context = self._build_context_string(knowledge)
-
-        system_prompt = (
-            "You are a code documentation expert. Generate a clear, structured, "
-            "beginner-friendly project overview. Include: purpose, architecture, "
-            "key technologies, and how the components fit together. "
-            "Write in plain English at a level understandable by an entry-level developer."
-        )
-
-        user_prompt = (
-            "Based on the following code analysis, generate a comprehensive project overview:\n\n"
-            f"{context}\n\n"
-            "Include sections for:\n"
-            "1. Project Purpose - What does this project do?\n"
-            "2. Architecture - How is the code organized?\n"
-            "3. Key Technologies - What languages, frameworks, and libraries are used?\n"
-            "4. Key Components - What are the main modules and their responsibilities?"
-        )
-
-        async def _create():
-            return await self._call_openai(system_prompt, user_prompt)
-
-        try:
-            return await self._retry_with_backoff(_create)
-        except Exception as e:
-            logger.error(f"Error generating project overview: {e}")
-            # Fallback to knowledge-graph-based summary
-            if knowledge.project_summary and knowledge.project_summary.summary_text:
-                return knowledge.project_summary.summary_text
-            return "Project overview could not be generated."
+        return await self.generate_project_overview_with_context(knowledge, context)
 
     async def generate_per_file_explanations(
         self, knowledge: KnowledgeGraph
@@ -364,56 +285,8 @@ class ExplanationEngine:
         Returns:
             Dictionary mapping file paths to explanations
         """
-        explanations: dict[str, str] = {}
         context = self._build_context_string(knowledge)
-
-        system_prompt = (
-            "You are a code documentation expert. Generate a clear, "
-            "beginner-friendly explanation for a specific source file. "
-            "Describe its role in the project, key functions/classes, "
-            "and relationships to other files. "
-            "Write in plain English at a level understandable by an entry-level developer."
-        )
-
-        for file_summary in knowledge.file_summaries:
-            # Build file-specific context
-            file_functions = [
-                fn for fn in knowledge.function_summaries
-                if fn.file_path == file_summary.file_path
-            ]
-            func_list = "\n".join(
-                f"  - `{fn.function_name}` (lines {fn.line_start}-{fn.line_end})"
-                for fn in file_functions
-            )
-
-            user_prompt = (
-                f"Generate an explanation for the file: **{file_summary.file_path}**\n\n"
-                f"File summary: {file_summary.summary_text or 'N/A'}\n\n"
-                f"Functions in this file:\n{func_list or 'No functions detected'}\n\n"
-                f"Project context:\n{context[:2000]}\n\n"  # Truncate context
-                "Explain:\n"
-                "1. What this file does\n"
-                "2. Key functions and their purposes\n"
-                "3. How it relates to other parts of the project"
-            )
-
-            async def _create_for_file(prompt=user_prompt):
-                return await self._call_openai(system_prompt, prompt)
-
-            try:
-                explanation = await self._retry_with_backoff(_create_for_file)
-                if explanation:
-                    explanations[file_summary.file_path] = explanation
-            except Exception as e:
-                logger.warning(
-                    f"Error generating explanation for {file_summary.file_path}: {e}"
-                )
-                # Use fallback summary
-                if file_summary.summary_text:
-                    explanations[file_summary.file_path] = file_summary.summary_text
-                continue
-
-        return explanations
+        return await self.generate_per_file_explanations_with_context(knowledge, context)
 
     async def generate_execution_flow(
         self, knowledge: KnowledgeGraph
@@ -428,45 +301,7 @@ class ExplanationEngine:
             Execution flow explanation or None on failure
         """
         context = self._build_context_string(knowledge)
-
-        # Extract entry points from analysis if available
-        entry_points_info = ""
-        if hasattr(knowledge, "analysis") and hasattr(knowledge.analysis, "entry_points"):
-            entry_points = knowledge.analysis.entry_points
-            if entry_points:
-                entry_points_info = f"\nIdentified entry points: {', '.join(entry_points)}"
-
-        system_prompt = (
-            "You are a code documentation expert. Generate a clear, "
-            "beginner-friendly execution flow narrative. Explain how the program "
-            "starts, what happens step by step, how it processes input, and how "
-            "it produces output. Write as a narrative that an entry-level developer "
-            "can follow."
-        )
-
-        user_prompt = (
-            f"Based on the following code analysis, describe the execution flow:\n\n"
-            f"{context}\n"
-            f"{entry_points_info}\n\n"
-            "Describe:\n"
-            "1. How the program starts (entry point)\n"
-            "2. The initialization sequence\n"
-            "3. How user input/requests are processed\n"
-            "4. How data flows through the system\n"
-            "5. How output is produced"
-        )
-
-        async def _create():
-            return await self._call_openai(system_prompt, user_prompt)
-
-        try:
-            return await self._retry_with_backoff(_create)
-        except Exception as e:
-            logger.error(f"Error generating execution flow: {e}")
-            # Fallback
-            if entry_points_info:
-                return f"Execution flow starting from: {entry_points_info}"
-            return "Execution flow analysis could not be generated."
+        return await self.generate_execution_flow_with_context(knowledge, context)
 
     async def generate_explanations(
         self,
@@ -582,7 +417,7 @@ class ExplanationEngine:
         )
 
         async def _create():
-            return await self._call_openai(system_prompt, user_prompt)
+            return await self._call_provider_llm(system_prompt, user_prompt)
 
         try:
             return await self._retry_with_backoff(_create)
@@ -597,6 +432,11 @@ class ExplanationEngine:
     ) -> dict[str, str]:
         """Generate per-file explanations with pre-built context, including actual source code."""
         explanations: dict[str, str] = {}
+        semaphore = asyncio.Semaphore(5)
+        function_map: dict[str, list] = {}
+
+        for fn in knowledge.function_summaries:
+            function_map.setdefault(fn.file_path, []).append(fn)
 
         # Build a lookup map: file_path -> source code
         source_map: dict[str, str] = {}
@@ -621,11 +461,8 @@ class ExplanationEngine:
             "Minimum target: 400 words per file."
         )
 
-        for file_summary in knowledge.file_summaries:
-            file_functions = [
-                fn for fn in knowledge.function_summaries
-                if fn.file_path == file_summary.file_path
-            ]
+        async def _explain_file(file_summary):
+            file_functions = function_map.get(file_summary.file_path, [])
             func_details = "\n".join(
                 f"  - `{fn.function_name}` (lines {fn.line_start}–{fn.line_end}): {fn.summary_text or 'no summary'}"
                 for fn in file_functions
@@ -674,20 +511,30 @@ class ExplanationEngine:
                 "Be exhaustive. Reference actual line numbers, variable names, and code from the source above."
             )
 
-            async def _create_for_file(prompt=user_prompt):
-                return await self._call_openai(system_prompt, prompt)
+            async with semaphore:
+                async def _create_for_file(prompt=user_prompt):
+                    return await self._call_provider_llm(system_prompt, prompt)
 
-            try:
-                explanation = await self._retry_with_backoff(_create_for_file)
-                if explanation:
-                    explanations[file_summary.file_path] = explanation
-            except Exception as e:
-                logger.warning(
-                    f"Error generating explanation for {file_summary.file_path}: {e}"
-                )
+                try:
+                    explanation = await self._retry_with_backoff(_create_for_file)
+                    if explanation:
+                        return file_summary.file_path, explanation
+                except Exception as e:
+                    logger.warning(
+                        f"Error generating explanation for {file_summary.file_path}: {e}"
+                    )
+
                 if file_summary.summary_text:
-                    explanations[file_summary.file_path] = file_summary.summary_text
-                continue
+                    return file_summary.file_path, file_summary.summary_text
+                return file_summary.file_path, None
+
+        results = await asyncio.gather(
+            *(_explain_file(file_summary) for file_summary in knowledge.file_summaries)
+        )
+
+        for file_path, explanation in results:
+            if explanation:
+                explanations[file_path] = explanation
 
         return explanations
 
@@ -738,7 +585,7 @@ class ExplanationEngine:
         )
 
         async def _create():
-            return await self._call_openai(system_prompt, user_prompt)
+            return await self._call_provider_llm(system_prompt, user_prompt)
 
         try:
             return await self._retry_with_backoff(_create)

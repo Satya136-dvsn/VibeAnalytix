@@ -20,6 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.analysis import AnalysisResult
 from app.config import settings
+from app.embeddings import generate_embedding
 from app.parser import ParsedFile, FunctionDef
 
 logger = logging.getLogger(__name__)
@@ -99,7 +100,7 @@ class KnowledgeBuilder:
         self.gemini_mode = bool(settings.gemini_api_key)
         if self.gemini_mode:
             genai.configure(api_key=settings.gemini_api_key)
-            self.gemini_model = genai.GenerativeModel("gemini-1.5-flash")
+            self.gemini_model = genai.GenerativeModel(settings.gemini_text_model)
             self.client = None
         else:
             self.client = AsyncOpenAI(api_key=settings.openai_api_key)
@@ -505,11 +506,9 @@ async def generate_and_store_embeddings(
     """
     import asyncio
     import logging
-    from openai import AsyncOpenAI, APIError, RateLimitError, APIConnectionError
-    from app.config import settings
+    from openai import APIError, RateLimitError, APIConnectionError
 
     logger = logging.getLogger(__name__)
-    client = AsyncOpenAI(api_key=settings.openai_api_key)
     retry_delays = [1, 2, 4]
     max_retries = 3
     retryable_errors = (APIError, RateLimitError, APIConnectionError)
@@ -519,51 +518,55 @@ async def generate_and_store_embeddings(
         return
 
     failed_count = 0
+    semaphore = asyncio.Semaphore(5)
 
-    # Generate embeddings and store directly
-    for func_summary in knowledge.function_summaries:
+    async def embed_single_summary(func_summary: FunctionSummary):
+        """Generate embedding for one summary with retries."""
         text = func_summary.summary_text or func_summary.function_name
         embedding = None
+        failed = False
 
-        for attempt in range(max_retries):
-            try:
-                if settings.gemini_api_key:
-                    # Gemini embedding generation
-                    response_embed = await genai.embed_content_async(
-                        model="text-embedding-004",
-                        content=text,
+        async with semaphore:
+            for attempt in range(max_retries):
+                try:
+                    embedding = await generate_embedding(
+                        text,
                         task_type="retrieval_document",
                     )
-                    embedding = response_embed['embedding'].values
-                else:
-                    # OpenAI embedding generation
-                    response = await client.embeddings.create(
-                        model="text-embedding-3-small",
-                        input=text,
-                    )
-                    embedding = response.data[0].embedding
-                break
-            except retryable_errors as e:
-                if attempt < max_retries - 1:
-                    delay = retry_delays[attempt]
-                    logger.warning(
-                        f"Embedding error for {func_summary.function_name} "
-                        f"(attempt {attempt + 1}/{max_retries}): {e}. "
-                        f"Retrying in {delay}s..."
-                    )
-                    await asyncio.sleep(delay)
-                else:
+                    break
+                except retryable_errors as e:
+                    if attempt < max_retries - 1:
+                        delay = retry_delays[attempt]
+                        logger.warning(
+                            f"Embedding error for {func_summary.function_name} "
+                            f"(attempt {attempt + 1}/{max_retries}): {e}. "
+                            f"Retrying in {delay}s..."
+                        )
+                        await asyncio.sleep(delay)
+                    else:
+                        logger.error(
+                            f"Embedding failed for {func_summary.function_name} "
+                            f"after {max_retries} attempts: {e}"
+                        )
+                        failed = True
+                except Exception as e:
                     logger.error(
-                        f"Embedding failed for {func_summary.function_name} "
-                        f"after {max_retries} attempts: {e}"
+                        f"Non-retryable embedding error for {func_summary.function_name}: {e}"
                     )
-                    failed_count += 1
-            except Exception as e:
-                logger.error(
-                    f"Non-retryable embedding error for {func_summary.function_name}: {e}"
-                )
-                failed_count += 1
-                break
+                    failed = True
+                    break
+
+        return func_summary, text, embedding, failed
+
+    # Generate embeddings in parallel, then store results in one DB pass.
+    embedding_results = await asyncio.gather(
+        *(embed_single_summary(func_summary) for func_summary in knowledge.function_summaries)
+    )
+
+    # Create records with embeddings directly (pgvector handles serialization)
+    for func_summary, text, embedding, failed in embedding_results:
+        if failed:
+            failed_count += 1
 
         # Create record with embedding directly (pgvector handles it)
         from app.models import FunctionSummary as FunctionSummaryModel

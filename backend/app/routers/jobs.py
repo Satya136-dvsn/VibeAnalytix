@@ -496,10 +496,8 @@ async def chat_with_repo(
     """
     Ask a question about the analyzed codebase using semantic vector search.
     """
-    from app.vector_store import semantic_retrieval
     from app.config import settings
-    import google.generativeai as genai
-    from openai import AsyncOpenAI
+    from app.query_service import answer_repository_question
 
     # Find job
     stmt = select(Job).where(Job.id == UUID(job_id))
@@ -531,74 +529,11 @@ async def chat_with_repo(
         )
 
     try:
-        # Generate query embedding
-        gemini_mode = bool(settings.gemini_api_key)
-        if gemini_mode:
-            genai.configure(api_key=settings.gemini_api_key)
-            response = await genai.embed_content_async(
-                model="text-embedding-004",
-                content=request.query[:8000],
-                task_type="retrieval_query",
-            )
-            query_embedding = response['embedding'].values
-        else:
-            client = AsyncOpenAI(api_key=settings.openai_api_key)
-            response = await client.embeddings.create(
-                model="text-embedding-3-small",
-                input=request.query[:8000],
-            )
-            query_embedding = response.data[0].embedding
-
-        # Retrieve top 5 similar functions
-        top_functions = await semantic_retrieval(
+        answer, sources = await answer_repository_question(
+            job_id=job_id,
+            query=request.query,
             session=session,
-            job_id=job.id,
-            query_embedding=query_embedding,
-            top_k=5,
         )
-
-        sources = []
-        context_parts = []
-        for fn in top_functions:
-            sources.append({
-                "file": fn.file_path,
-                "function": fn.function_name,
-                "summary": fn.summary_text
-            })
-            context_parts.append(
-                f"File: {fn.file_path}\n"
-                f"Function: {fn.function_name} (Lines {fn.line_start}-{fn.line_end})\n"
-                f"Summary: {fn.summary_text}"
-            )
-
-        context_str = "\n\n".join(context_parts)
-        
-        system_prompt = (
-            "You are a helpful senior developer analyzing a codebase. "
-            "Use the provided context snippets from the codebase to answer the user's question. "
-            "If the context is insufficient, explain what you can infer, but don't invent code."
-        )
-        user_prompt = f"Context from codebase:\n{context_str}\n\nQuestion: {request.query}"
-
-        # Get answer
-        if gemini_mode:
-            model = genai.GenerativeModel("gemini-1.5-flash")
-            full_prompt = f"{system_prompt}\n\n{user_prompt}"
-            chat_response = await model.generate_content_async(
-                full_prompt,
-                generation_config=genai.types.GenerationConfig(temperature=0.3)
-            )
-            answer = chat_response.text
-        else:
-            chat_response = await client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt},
-                ],
-                temperature=0.3,
-            )
-            answer = chat_response.choices[0].message.content
 
         return ChatResponse(answer=answer, sources=sources)
 

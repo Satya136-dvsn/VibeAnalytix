@@ -63,7 +63,7 @@ async def semantic_retrieval(
                    summary_text, embedding
             FROM function_summaries
             WHERE job_id = :job_id AND embedding IS NOT NULL
-            ORDER BY embedding <=> :query_vector::vector
+            ORDER BY embedding <=> CAST(:query_vector AS vector)
             LIMIT :top_k
         """),
         {
