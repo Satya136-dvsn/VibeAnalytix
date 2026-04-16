@@ -99,6 +99,9 @@ class ChatResponse(BaseModel):
     """Semantic search/chat response."""
     answer: str
     sources: list[dict] = []
+    confidence: float = 0.0
+    abstained: bool = False
+    abstain_reason: Optional[str] = None
 
 
 

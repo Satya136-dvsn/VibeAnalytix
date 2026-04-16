@@ -11,6 +11,7 @@ import asyncio
 from typing import Iterable, Optional
 
 import google.generativeai as genai
+import httpx
 from openai import AsyncOpenAI
 
 from app.config import settings
@@ -25,6 +26,21 @@ GEMINI_EMBED_MODELS: tuple[str, ...] = (
 
 _GENAI_CONFIGURED = False
 _OPENAI_CLIENT: AsyncOpenAI | None = None
+_LOCAL_EMBED_CLIENT: httpx.AsyncClient | None = None
+
+
+def _is_configured_key(value: str | None, *, expected_prefix: str | None = None) -> bool:
+    """Return True only for non-placeholder provider keys."""
+    if not value:
+        return False
+    key = value.strip()
+    if not key:
+        return False
+    if "placeholder" in key.lower():
+        return False
+    if expected_prefix and not key.startswith(expected_prefix):
+        return False
+    return True
 
 
 def _get_openai_client() -> AsyncOpenAI:
@@ -33,6 +49,24 @@ def _get_openai_client() -> AsyncOpenAI:
     if _OPENAI_CLIENT is None:
         _OPENAI_CLIENT = AsyncOpenAI(api_key=settings.openai_api_key)
     return _OPENAI_CLIENT
+
+
+def _get_local_embed_client() -> httpx.AsyncClient:
+    """Lazily initialize and cache local embedding HTTP client."""
+    global _LOCAL_EMBED_CLIENT
+    if _LOCAL_EMBED_CLIENT is None:
+        _LOCAL_EMBED_CLIENT = httpx.AsyncClient(
+            timeout=float(settings.local_embedding_timeout_seconds)
+        )
+    return _LOCAL_EMBED_CLIENT
+
+
+async def close_local_embed_client() -> None:
+    """Release shared local embedding HTTP resources."""
+    global _LOCAL_EMBED_CLIENT
+    if _LOCAL_EMBED_CLIENT is not None:
+        await _LOCAL_EMBED_CLIENT.aclose()
+        _LOCAL_EMBED_CLIENT = None
 
 
 def _ensure_genai_configured() -> None:
@@ -58,6 +92,32 @@ async def _gemini_embed_content(model: str, content: str, task_type: str) -> obj
         content=content,
         task_type=task_type,
     )
+
+
+async def _local_embed_content(content: str) -> list[float]:
+    """Call local Ollama-compatible embedding endpoint."""
+    base_url = settings.local_embedding_base_url.rstrip("/")
+    payload = {
+        "model": settings.local_embedding_model,
+        "input": content,
+    }
+
+    client = _get_local_embed_client()
+    response = await client.post(f"{base_url}/api/embed", json=payload)
+    response.raise_for_status()
+    data = response.json()
+
+    embeddings = data.get("embeddings")
+    if isinstance(embeddings, list) and embeddings:
+        first = embeddings[0]
+        if isinstance(first, list) and first:
+            return [float(v) for v in first]
+
+    embedding = data.get("embedding")
+    if isinstance(embedding, list) and embedding:
+        return [float(v) for v in embedding]
+
+    raise RuntimeError("Local embedding provider returned no embedding vector")
 
 
 def _coerce_embedding(raw: object) -> Optional[list[float]]:
@@ -94,7 +154,19 @@ async def generate_embedding(
     content = text[:8000]
     last_error: Exception | None = None
 
-    if settings.gemini_api_key:
+    embed_mode = settings.embedding_provider_mode
+    use_local = embed_mode in {"local", "hybrid"}
+    use_cloud = embed_mode in {"cloud", "hybrid"}
+
+    if use_local:
+        try:
+            return await _local_embed_content(content)
+        except Exception as exc:  # pragma: no cover - local service/network specific
+            last_error = exc
+            if embed_mode == "local":
+                raise
+
+    if use_cloud and _is_configured_key(settings.gemini_api_key, expected_prefix="AIza"):
         _ensure_genai_configured()
         for model in GEMINI_EMBED_MODELS:
             try:
@@ -109,7 +181,7 @@ async def generate_embedding(
             except Exception as exc:  # pragma: no cover - provider/network specific
                 last_error = exc
 
-    if settings.openai_api_key:
+    if use_cloud and _is_configured_key(settings.openai_api_key, expected_prefix="sk-"):
         try:
             client = _get_openai_client()
             response = await client.embeddings.create(
@@ -124,5 +196,5 @@ async def generate_embedding(
         raise last_error
 
     raise RuntimeError(
-        "No embedding provider configured. Set GEMINI_API_KEY or OPENAI_API_KEY."
+        "No embedding provider configured. Configure local embedding service or set cloud API keys."
     )

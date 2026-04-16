@@ -16,6 +16,7 @@ from app.auth import get_current_user
 from app.config import settings
 from app.database import get_session
 from app.models import User, Job, ProjectResult, FileSummary
+from app.provider_health import get_provider_readiness_report
 from app.rate_limiter import enforce_sliding_window_limit, RateLimitError
 from app.redis_store import get_redis
 from app.schemas import (
@@ -162,6 +163,17 @@ async def submit_job(
             detail=(
                 f"Rate limit exceeded: "
                 f"{settings.rate_limit_jobs_per_hour} job submissions per hour"
+            ),
+        )
+
+    # Ensure provider readiness before creating long-running pipeline jobs.
+    readiness = await get_provider_readiness_report()
+    if not readiness["ready"]:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=(
+                "Providers are not ready for analysis. "
+                "Check /health/readiness and ensure local models are available."
             ),
         )
 
@@ -529,13 +541,19 @@ async def chat_with_repo(
         )
 
     try:
-        answer, sources = await answer_repository_question(
+        answer, sources, confidence, abstained, abstain_reason = await answer_repository_question(
             job_id=job_id,
             query=request.query,
             session=session,
         )
 
-        return ChatResponse(answer=answer, sources=sources)
+        return ChatResponse(
+            answer=answer,
+            sources=sources,
+            confidence=confidence,
+            abstained=abstained,
+            abstain_reason=abstain_reason,
+        )
 
     except Exception as e:
         import logging
@@ -543,6 +561,9 @@ async def chat_with_repo(
         # Return graceful degradation if AI fails
         return ChatResponse(
             answer=f"I couldn't process your request dynamically due to: {str(e)} However, based on the repository structure, try manually inspecting the files mentioned in your analysis overview.",
-            sources=[]
+            sources=[],
+            confidence=0.0,
+            abstained=True,
+            abstain_reason="chat_runtime_error",
         )
 

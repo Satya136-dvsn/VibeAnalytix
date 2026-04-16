@@ -1,0 +1,3 @@
+{"question":"Where is job submission rate limiting enforced?","must_include_terms":["rate", "limit"],"expected_files":["app/routers/jobs.py"]}
+{"question":"How are semantic embeddings generated for retrieval?","must_include_terms":["embedding", "retrieval"],"expected_files":["app/embeddings.py","app/vector_store.py"]}
+{"question":"What endpoint checks model readiness before jobs run?","must_include_terms":["readiness", "health"],"expected_files":["app/main.py","app/provider_health.py"]}

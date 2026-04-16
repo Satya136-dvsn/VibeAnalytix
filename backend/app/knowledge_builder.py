@@ -11,6 +11,7 @@ All summaries are generated using OpenAI's gpt-3.5-turbo for cost-efficiency.
 """
 
 import asyncio
+import hashlib
 import logging
 from dataclasses import dataclass, field
 from typing import Optional
@@ -96,19 +97,44 @@ class KnowledgeBuilder:
 
         self.provider = LLMProviderService()
         self.gemini_mode = self.provider.gemini_mode
+        self._summary_cache: dict[str, str] = {}
+
+    def _summary_cache_key(self, context: str, summary_type: str) -> str:
+        """Create stable cache key for summary requests."""
+        digest = hashlib.sha256(context.encode("utf-8", errors="ignore")).hexdigest()
+        return f"{summary_type}:{digest}"
 
     def _fallback_summary(self, context: str, summary_type: str) -> str:
-        """Return deterministic local summaries when no LLM provider is configured."""
-        if summary_type == "project":
-            return context
-        if summary_type == "module":
-            return context
-        if summary_type == "file":
-            return context
+        """Return deterministic summary that preserves key technical signals."""
+        lines = [line.strip() for line in context.splitlines() if line.strip()]
+        head = lines[:8]
+        text = " ".join(head)
+        compact = " ".join(text.split())[:420]
+
         if summary_type == "function":
-            first_line = context.splitlines()[0] if context else "function"
-            return f"Summary: {first_line}"
-        return context
+            return (
+                "Function summary (local fallback): "
+                f"{compact or 'Purpose inferred from function body and identifiers.'}"
+            )
+        if summary_type == "file":
+            return (
+                "File summary (local fallback): "
+                f"This file contributes to the codebase with key routines and data flow responsibilities. "
+                f"Highlights: {compact or 'insufficient source context.'}"
+            )
+        if summary_type == "module":
+            return (
+                "Module summary (local fallback): "
+                f"This module groups related files and shared behavior. "
+                f"Highlights: {compact or 'insufficient source context.'}"
+            )
+        if summary_type == "project":
+            return (
+                "Project summary (local fallback): "
+                f"The project appears to be organized as a multi-stage analysis pipeline with clear layering. "
+                f"Highlights: {compact or 'insufficient source context.'}"
+            )
+        return f"Summary (local fallback): {compact or 'insufficient context.'}"
 
     async def _generate_summary(
         self, context: str, summary_type: str = "general"
@@ -134,11 +160,18 @@ class KnowledgeBuilder:
             "project": "Provide a 3-4 sentence summary of this project's overall purpose, architecture, and key components:\n\n",
         }
 
+        cache_key = self._summary_cache_key(context, summary_type)
+        cached = self._summary_cache.get(cache_key)
+        if cached:
+            return cached
+
         prompt = prompts.get(summary_type, prompts["general"]) + context
 
         # Offline/test-safe mode: avoid external calls when no provider is configured.
         if self.provider.client is None and (not self.provider.gemini_mode or self.provider.gemini_model is None):
-            return self._fallback_summary(context, summary_type)
+            fallback = self._fallback_summary(context, summary_type)
+            self._summary_cache[cache_key] = fallback
+            return fallback
 
         system_prompt = (
             "You are a code analysis expert. "
@@ -156,11 +189,15 @@ class KnowledgeBuilder:
                 max_retries=self.MAX_RETRIES,
             )
             if content:
-                return content.strip()
+                output = content.strip()
+                self._summary_cache[cache_key] = output
+                return output
         except Exception as e:
             logger.error(f"Unexpected error generating summary: {e}")
 
-        return self._fallback_summary(context, summary_type)
+        fallback = self._fallback_summary(context, summary_type)
+        self._summary_cache[cache_key] = fallback
+        return fallback
 
     def _chunk_function(
         self, func: FunctionDef, file_path: str, chunk_size: int = 200

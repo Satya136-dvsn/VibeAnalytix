@@ -38,6 +38,18 @@ class Settings(BaseSettings):
     gemini_api_key: Optional[str] = None
     gemini_text_model: str = "gemini-2.0-flash"
 
+    # Provider modes
+    llm_provider_mode: Literal["local", "cloud", "hybrid"] = "local"
+    embedding_provider_mode: Literal["local", "cloud", "hybrid"] = "local"
+
+    # Local inference (Ollama-compatible)
+    local_llm_base_url: str = "http://localhost:11434"
+    local_embedding_base_url: str = "http://localhost:11434"
+    local_llm_model: str = "qwen2.5-coder:7b-instruct"
+    local_embedding_model: str = "nomic-embed-text"
+    local_llm_timeout_seconds: int = 120
+    local_embedding_timeout_seconds: int = 60
+
     # File size limits (MB)
     max_repo_size_mb: int = 500
     max_zip_size_mb: int = 100

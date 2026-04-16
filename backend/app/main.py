@@ -14,6 +14,10 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.config import settings, parse_csv_setting
 from app.database import init_db, close_db
+from app.embeddings import close_local_embed_client
+from app.llm_provider import close_local_llm_client
+from app.provider_health import get_provider_readiness_report
+from app.provider_health import close_provider_health_client
 from app.redis_store import init_redis, close_redis
 from app.routers import auth, jobs
 from app.celery_app import celery_app
@@ -56,6 +60,10 @@ async def lifespan(app: FastAPI):
     print("Closing Redis connections...")
     await close_redis()
     print("Redis connections closed")
+
+    await close_local_embed_client()
+    await close_local_llm_client()
+    await close_provider_health_client()
     
     print("Closing database connections...")
     await close_db()
@@ -143,6 +151,15 @@ def create_app() -> FastAPI:
     @app.get("/health")
     async def health_check():
         return {"status": "ok", "version": "0.1.0"}
+
+    @app.get("/health/readiness")
+    async def health_readiness():
+        report = await get_provider_readiness_report()
+        return {
+            "status": "ready" if report["ready"] else "not_ready",
+            "version": "0.1.0",
+            "report": report,
+        }
 
     return app
 

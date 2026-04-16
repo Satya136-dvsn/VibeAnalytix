@@ -2,178 +2,230 @@
 
 import React from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 
 export default function LandingPage() {
-  const router = useRouter()
+  const platformCapabilities = [
+    {
+      title: 'Language-aware parsing',
+      detail:
+        'Tree-sitter parsing builds structured syntax trees before any explanation is generated.',
+      file: 'backend/app/parser.py',
+    },
+    {
+      title: 'Multi-pass repository analysis',
+      detail:
+        'Passes for structure, semantics, and cross-file relationships are executed in sequence.',
+      file: 'backend/app/analysis.py',
+    },
+    {
+      title: 'Hierarchical knowledge synthesis',
+      detail:
+        'Function, file, module, and project summaries are built and stored for grounded answers.',
+      file: 'backend/app/knowledge_builder.py',
+    },
+    {
+      title: 'Vector retrieval pipeline',
+      detail:
+        'Embeddings and pgvector-backed search retrieve relevant context for every query.',
+      file: 'backend/app/vector_store.py',
+    },
+  ]
+
+  const workflow = [
+    {
+      step: '01',
+      title: 'Ingest',
+      text: 'Connect a repository and create an analysis job through the jobs API.',
+    },
+    {
+      step: '02',
+      title: 'Analyze',
+      text: 'Run parser and analysis passes to construct a durable repository model.',
+    },
+    {
+      step: '03',
+      title: 'Index',
+      text: 'Generate embeddings and knowledge summaries for precise retrieval.',
+    },
+    {
+      step: '04',
+      title: 'Explain',
+      text: 'Answer engineering questions with citations and repository-grounded context.',
+    },
+  ]
+
   return (
-    <div className="min-h-screen bg-surface text-on-surface selection:bg-primary/30 selection:text-primary">
-      {/* TopNavBar */}
-<nav className="fixed top-0 w-full z-50 bg-slate-900/60 backdrop-blur-xl flex justify-between items-center px-8 py-4 w-full shadow-[0_20_50px_rgba(182,160,255,0.08)]">
-<div className="text-2xl font-headline italic text-slate-50">VibeAnalytix</div>
-<div className="hidden md:flex items-center gap-8">
-<a className="text-violet-400 font-semibold border-b border-violet-400 transition-all duration-300" href="#">Platform</a>
-<a className="text-slate-400 hover:text-slate-200 transition-all duration-300" href="#">Solutions</a>
-<a className="text-slate-400 hover:text-slate-200 transition-all duration-300" href="#">Security</a>
-<a className="text-slate-400 hover:text-slate-200 transition-all duration-300" href="#">Pricing</a>
-</div>
-<div className="flex items-center gap-4">
-<button onClick={() => router.push('/auth')} className="text-slate-400 hover:text-slate-200 text-sm font-medium px-4 py-2 transition-all active:scale-95">Sign In</button>
-<button onClick={() => router.push('/dashboard')} className="bg-gradient-to-r from-primary to-primary-dim text-on-primary px-6 py-2 rounded-xl font-semibold shadow-lg hover:brightness-110 transition-all active:scale-90">Dashboard</button>
-</div>
-</nav>
-{/* Hero Section */}
-<header className="relative pt-40 pb-24 px-8 overflow-hidden">
-{/* Abstract Background Visual */}
-<div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/10 rounded-full blur-[120px] -z-10"></div>
-<div className="absolute top-1/4 right-0 w-96 h-96 bg-tertiary/5 rounded-full blur-[100px] -z-10"></div>
-<div className="max-w-7xl mx-auto flex flex-col items-center text-center">
-<h1 className="font-headline text-5xl md:text-7xl lg:text-8xl font-medium leading-[1.1] mb-8 max-w-5xl tracking-tight">
-                Neural Precision for Any <span className="italic text-primary">Codebase.</span>
-</h1>
-<p className="font-body text-on-surface-variant text-lg md:text-xl max-w-2xl mb-12 leading-relaxed">
-                Deliberate AI understanding that transforms complex repositories into clear, structured narratives. Not just chat—true codebase reasoning.
-            </p>
-<div className="flex flex-col sm:flex-row gap-6">
-<button onClick={() => router.push('/sign-up')} className="bg-gradient-to-r from-primary to-primary-dim text-on-primary-fixed font-bold text-lg px-8 py-4 rounded-xl shadow-[0_0_30px_rgba(182,160,255,0.4)] hover:shadow-[0_0_50px_rgba(182,160,255,0.6)] transition-all active:scale-95">
-                    Start Free Trial
-                </button>
-<button className="bg-surface-container-highest/40 backdrop-blur-md border border-outline-variant/30 text-on-surface font-semibold text-lg px-8 py-4 rounded-xl flex items-center gap-3 hover:bg-surface-container-highest transition-all active:scale-95">
-<span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>play_circle</span>
-                    Watch Technical Demo
-                </button>
-</div>
-{/* Hero Visual Placeholder */}
-<div className="mt-20 w-full max-w-6xl relative">
-<div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent z-10"></div>
-<div className="rounded-2xl overflow-hidden border border-outline-variant/15 glass-card p-4">
-<img className="w-full h-[500px] object-cover rounded-xl opacity-80" data-alt="abstract architectural visualization of a neural network with glowing violet data lines and shimmering code particles in a dark void" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAmLKUUZ1bmKJtlyf6OuCp0ihnmqpOb8LFrGldCzYm4g5MecIMG-U294kDxNV6Sssb9ZewWn12QjbeDPxtj0jfpPMH9rE1zQW23TsTdr9ugbUB2nfUpV0lG0hAmgkD0PbFPQcNKESFREet2YPqtR-xm34i9IDqOrJpx3q_LR2f2-z1xSgP5FX6EmMXUI9dYv57nePWEHBMzv_ke7VlLfXzzEKe7u5iP44SK0TwIWJD6Qpvvj_0v2Kbr_LiuNaStfta0wYpChZ6BpDk"/>
-</div>
-</div>
-</div>
-</header>
-{/* Social Proof */}
-<section className="py-16 border-y border-outline-variant/10 bg-surface-container-lowest/30">
-<div className="max-w-7xl mx-auto px-8">
-<p className="text-xs uppercase tracking-[0.3em] text-on-surface-variant text-center mb-10 font-bold">Trusted by Engineering Teams at</p>
-<div className="flex flex-wrap justify-center items-center gap-12 md:gap-24 opacity-40 grayscale contrast-125">
-<img className="h-8" data-alt="minimalist tech logo for a multinational cloud services provider in monochrome silver" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBoZGz1N9jRVcaLQHKMx16BzOyRr3gDLDsqkgRB9Y6NHjX_bbLd_KzTmmHaWgUzckWUXSq9HUJkVJY-LVYm7w7K5WsN4Zynx99AANWHgK92NfJlKRrrGJ-cfwwR9J4zTKZrBv-ARxVPsr_cJ5npwkSKmPiqQLlQA0exBNOH29VGtKdoqyLqwYRVf0BmaZxwNND3SMEDJg58zAn3rubHdqbaLZo-P_tDS3BCGDfgCsfrvJY7_f6t7O7W1626XPVoPMqvhRSwcuKufmg"/>
-<img className="h-8" data-alt="clean vector logo of a leading software development platform in subtle slate gray" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBArD2QgWIgCehQuGsDT1RV8wsuVOVqWf0AE2cDJyVx8H3lTuQhkXIQcPw8fm7xOSt-k_cko4oklAJH3jN2THn_Zet4vKtI1w2LS2jz3o_2cdZmdhhy8iId70DWb1yvlXGz2YQCPfEXfdIM6DrEdhjYj3Cu6_k9AHEnZw-RnBxWWl2ZX3VjMalD0WY98pryUn6SnU3FAmMxbTpIOrq-WH7AGnrAEhjNr4un1AsTGuKXar1KAjwNCyRbaI4L3INLCl6_Brs7C8GSu_Q"/>
-<img className="h-8" data-alt="geometric corporate logo for an enterprise security firm in matte charcoal finish" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA6ntGRJbaICJX5X7yQZ5mKvdki5ytaDLF_fWfjfzmaNU0fnNCVReeJegOxPT7tZP96gubXnfHMD6e3Yf_RXjPXbBlXdngahm_MHxAZ6KW8w3jU6GKxYXBJleYRUiwuXrIOaoky_N8Sfi-rWVTNdRsBlEiHi1qA02GqYGBnRwt8dIraLB_vKXtxqr47uAUBgPZwY1kFwJC2aZBfh8M4xdw3q8rb7-cUnxhs_KsIkUtm8E1EEeUKUSptmuv_ZaWRHKre02MfrH7Xggw"/>
-<img className="h-8" data-alt="modern typography logo for a high-growth fintech startup in desaturated white" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB51RO8hZOn_SuTbuLcNdc4a7vGvD9-jweuFYOhuOfGSGvGWgiwqgqiKPhgH2XSct15Eiq7t25HIpEE7wkjGLJu1kYPwbV6GP8uTr-Yrpl8WFL5JpHW1iA-9aApvKeaYQrgngHG4TTv6_shJpBohuumCb2nXBK2byiVvr8DcqljiqauXlnkLUHbK2jis6_xvTo4ZlnvxfaKKZlOG__1fpZt98ptDVAzrJwSnyn3PNAdQOt2ARbnL9V6c-4UUWB7fSzwjwa3uMxv5Ks"/>
-<img className="h-8" data-alt="sleek abstract logo for an aerospace engineering corporation in muted metallic tones" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBnbNNxdNQgYZ9wIA1oC0VPEaJeKWutWsdzzllxYpcen-yPVIbkpfK5ljG8PRNv9QLv-_hDOjPSHr0RTSBWEopAy4y9w1lKPeAeR3ePh4xixdCzMexNI5UJa4WfAyOc3I1gVhZatPU5RmxnE4Rk405JeJHKpbSvVCBto-st99rAXDVhhUUrnUc_QslQbLaSnAMBgNx6FQu-xU51NzTU9aHccb4Rnjkz2EChXVzjKOhlJCBX5BcLZIJQBfdCaND5TPmQJ0jSmjROodY"/>
-</div>
-</div>
-</section>
-{/* Features Section (Bento Grid Style) */}
-<section className="py-32 px-8">
-<div className="max-w-7xl mx-auto">
-<div className="flex flex-col md:flex-row justify-between items-end mb-20 gap-8">
-<div className="max-w-2xl">
-<h2 className="font-headline text-4xl md:text-5xl mb-6">Engineered for architectural depth.</h2>
-<p className="text-on-surface-variant text-lg">Beyond standard LLM window constraints, VibeAnalytix builds a living graph of your logic, dependencies, and intent.</p>
-</div>
-<div className="pb-2">
-<a className="text-primary font-semibold flex items-center gap-2 group" href="#">
-                        Explore technical specs 
-                        <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
-</a>
-</div>
-</div>
-<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-{/* Feature 1 */}
-<div className="md:col-span-1 glass-card rounded-2xl p-8 border border-outline-variant/10 flex flex-col gap-6 hover:bg-surface-container-high transition-colors group">
-<div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
-<span className="material-symbols-outlined text-3xl">psychology</span>
-</div>
-<h3 className="text-2xl font-headline">Multi-Pass Analysis</h3>
-<p className="text-on-surface-variant leading-relaxed">A deep reasoning pipeline that executes recursive passes to ensure every edge case is mapped and understood before providing answers.</p>
-</div>
-{/* Feature 2 */}
-<div className="md:col-span-1 glass-card rounded-2xl p-8 border border-outline-variant/10 flex flex-col gap-6 hover:bg-surface-container-high transition-colors group">
-<div className="w-14 h-14 rounded-xl bg-tertiary/10 flex items-center justify-center text-tertiary border border-tertiary/20">
-<span className="material-symbols-outlined text-3xl">account_tree</span>
-</div>
-<h3 className="text-2xl font-headline">Hierarchical Knowledge</h3>
-<p className="text-on-surface-variant leading-relaxed">Automatically generates documentation from granular function levels up to global project summaries, maintaining context at every scale.</p>
-</div>
-{/* Feature 3 */}
-<div className="md:col-span-1 glass-card rounded-2xl p-8 border border-outline-variant/10 flex flex-col gap-6 hover:bg-surface-container-high transition-colors group">
-<div className="w-14 h-14 rounded-xl bg-primary-fixed-dim/10 flex items-center justify-center text-primary-fixed-dim border border-primary-fixed-dim/20">
-<span className="material-symbols-outlined text-3xl">database</span>
-</div>
-<h3 className="text-2xl font-headline">Semantic Retrieval</h3>
-<p className="text-on-surface-variant leading-relaxed">Powered by high-dimensional pgvector context, finding the needle in the haystack of millions of lines of code is instantaneous.</p>
-</div>
-</div>
-</div>
-</section>
-{/* Security & Trust */}
-<section className="py-24 px-8 bg-surface-container-low">
-<div className="max-w-7xl mx-auto">
-<div className="bg-surface-container-lowest rounded-[2rem] p-12 md:p-20 border border-outline-variant/10 relative overflow-hidden">
-<div className="absolute top-0 right-0 w-1/3 h-full opacity-10 pointer-events-none">
-<img className="w-full h-full object-cover" data-alt="ultra-modern server room with glowing blue status lights and organized cable management in a dark high-tech facility" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD7TLeP6qG2jl3WS9IJZx7QqKSabZFgX1UZ6nqKXkZIWcOQhyEHUwQO3KTFr0DcEWX_ZBove2FT0ie3q-LEwNyL153gk6_16IdsCsrrkQLGReJKQUnIjp1XWYhNAwz2a7Lu1efS9cm9KRdtz6KJU93PWd1_mP3KZGgkYTisoPJFrNDpFMxY21purJVyvjsJtWJkLHVVaRwpeK2llW7cGpWVUaUq2vtGSgRSWr7yjXPXUx9Vr6lH_KPC-ZJs0nVQOHi_2cV5UEH5Zns"/>
-</div>
-<div className="relative z-10 max-w-2xl">
-<span className="text-primary font-bold text-xs uppercase tracking-widest mb-6 block">Enterprise Grade Security</span>
-<h2 className="font-headline text-4xl md:text-5xl mb-8">Your intellectual property, fortified.</h2>
-<div className="space-y-10">
-<div className="flex gap-6">
-<div className="flex-shrink-0 w-10 h-10 rounded-full bg-surface-container-highest border border-outline-variant flex items-center justify-center">
-<span className="material-symbols-outlined text-primary text-xl">verified_user</span>
-</div>
-<div>
-<h4 className="text-xl font-semibold mb-2">Read-Only Sandboxed Ingestion</h4>
-<p className="text-on-surface-variant">We never write to your repositories. Analysis happens in ephemeral, strictly isolated environments that are wiped post-indexing.</p>
-</div>
-</div>
-<div className="flex gap-6">
-<div className="flex-shrink-0 w-10 h-10 rounded-full bg-surface-container-highest border border-outline-variant flex items-center justify-center">
-<span className="material-symbols-outlined text-primary text-xl">shield_person</span>
-</div>
-<div>
-<h4 className="text-xl font-semibold mb-2">SOC2 Compliance</h4>
-<p className="text-on-surface-variant">Rigorous audit standards ensuring your data privacy and operational security meet the highest global industry requirements.</p>
-</div>
-</div>
-</div>
-<div className="mt-12 flex gap-4">
-<img className="h-12" data-alt="official SOC2 compliance badge icon in white vector style" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBUxN36xIj1C_qSslgJqRfW_2YiieQzvvC0hy4v1I7g8l8KpUXidOEAtktbqyQ1tuR3tMQnEPV8tera3ti9PseuOzwx--4wWPB0E5zcvoCKU6fngJbC_c1B9w2mbHJ_TEGKVG0RfCeunOdVl-SKCsy8UtkNy_J-gdSku-Ihq2LMZkdAcGLNjq1GkQmRdU6GfHwcYzhDLjhG_zgcx3IpidyrEGEtB0YbRS52P-S3y_5jxpPsBOQ4TR3ttJ0sFxJe8B0kyLnuYiRQXcA"/>
-<img className="h-12" data-alt="ISO 27001 security certification seal in minimalist white design" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBwUaz5weuJXOS6rVIFtCmPpSijnMUGKRYBCp4GRjXrVZbtjm-Eji6ThisW7Z2ZBUt68FTqv93Y6ucrqFXtcx4JwmjNqNBoeKYpqvXvyOtscl3DkUw3lQHPiZgg2pR94KtB1eD47TXlyqe0cB7S4PfJzkJ8g220X7ndCoYvl_YsHs02kbyPWk11Ibm-kuO7XVgBAFPbv1H9onBhwPYPy_26wvabVLDLvZ3q_uVY06xOBhibrp4vbIl6vgPJKy9ioIteNxqxyYmRJdc"/>
-</div>
-</div>
-</div>
-</div>
-</section>
-{/* CTA Section */}
-<section className="py-32 px-8 text-center relative">
-<div className="max-w-3xl mx-auto">
-<h2 className="font-headline text-4xl md:text-6xl mb-8">Ready for a clearer vision?</h2>
-<p className="text-on-surface-variant text-xl mb-12">Join 2,000+ engineering leaders who leverage VibeAnalytix to ship faster with absolute confidence.</p>
-<button onClick={() => router.push('/sign-up')} className="bg-primary text-on-primary font-bold text-lg px-10 py-5 rounded-xl hover:scale-105 transition-transform active:scale-95 shadow-2xl">
-                Deploy Your Workspace
-            </button>
-</div>
-</section>
-{/* Footer */}
-<footer className="w-full border-t border-slate-900 bg-slate-950 flex flex-col md:flex-row justify-between items-center px-12 py-8 w-full">
-<div className="flex flex-col gap-2 mb-6 md:mb-0">
-<div className="text-lg font-headline text-slate-100">VibeAnalytix</div>
-<p className="font-sans text-[10px] uppercase tracking-widest text-slate-500">© 2024 VibeAnalytix. Neural Precision Engineering.</p>
-</div>
-<div className="flex flex-wrap justify-center gap-8 md:gap-12">
-<a className="font-sans text-xs uppercase tracking-widest text-slate-500 hover:text-violet-300 transition-all" href="#">Security Architecture</a>
-<a className="font-sans text-xs uppercase tracking-widest text-slate-500 hover:text-violet-300 transition-all" href="#">SOC2 Compliance</a>
-<a className="font-sans text-xs uppercase tracking-widest text-slate-500 hover:text-violet-300 transition-all" href="#">Technical Journal</a>
-<a className="font-sans text-xs uppercase tracking-widest text-slate-500 hover:text-violet-300 transition-all" href="#">API Docs</a>
-</div>
-<div className="mt-8 md:mt-0 flex gap-4">
-<a className="text-slate-500 hover:text-primary transition-colors" href="#"><span className="material-symbols-outlined">terminal</span></a>
-<a className="text-slate-500 hover:text-primary transition-colors" href="#"><span className="material-symbols-outlined">hub</span></a>
-<a className="text-slate-500 hover:text-primary transition-colors" href="#"><span className="material-symbols-outlined">public</span></a>
-</div>
-</footer>
+    <div className="va-landing min-h-screen text-slate-950 selection:bg-cyan-200 selection:text-slate-950">
+      <div className="va-grid-overlay" aria-hidden="true" />
+
+      <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/85 backdrop-blur">
+        <nav className="mx-auto flex h-20 w-full max-w-7xl items-center justify-between px-6 lg:px-10">
+          <Link href="/" className="text-2xl font-headline font-semibold tracking-tight text-slate-950">
+            VibeAnalytix
+          </Link>
+
+          <div className="hidden items-center gap-8 text-sm font-medium text-slate-600 md:flex">
+            <a href="#platform" className="transition-colors hover:text-slate-950">Platform</a>
+            <a href="#workflow" className="transition-colors hover:text-slate-950">Workflow</a>
+            <a href="#security" className="transition-colors hover:text-slate-950">Security</a>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Link
+              href="/sign-in-stitch"
+              className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-100"
+            >
+              Sign in
+            </Link>
+            <Link
+              href="/sign-up"
+              className="rounded-lg bg-slate-950 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-slate-900/20 transition-all hover:-translate-y-0.5 hover:bg-slate-800"
+            >
+              Start analysis
+            </Link>
+          </div>
+        </nav>
+      </header>
+
+      <main>
+        <section className="relative overflow-hidden border-b border-slate-200" id="platform">
+          <div className="va-orb va-orb-one" aria-hidden="true" />
+          <div className="va-orb va-orb-two" aria-hidden="true" />
+
+          <div className="mx-auto grid w-full max-w-7xl gap-14 px-6 py-20 lg:grid-cols-2 lg:px-10 lg:py-28">
+            <div className="va-fade-in-up space-y-8">
+              <p className="inline-flex rounded-full border border-cyan-300/70 bg-cyan-100/80 px-4 py-1 text-xs font-bold uppercase tracking-[0.2em] text-cyan-800">
+                Deliberate repository intelligence
+              </p>
+              <h1 className="font-headline text-5xl leading-tight tracking-tight text-slate-950 sm:text-6xl">
+                Understand codebases before you change them.
+              </h1>
+              <p className="max-w-xl text-lg leading-relaxed text-slate-600">
+                VibeAnalytix runs a structured pipeline across parsing, analysis, indexing, and explanation so your team can inspect architecture, dependencies, and behavior with confidence.
+              </p>
+              <div className="flex flex-col gap-4 sm:flex-row">
+                <Link
+                  href="/sign-up"
+                  className="inline-flex items-center justify-center rounded-xl bg-slate-950 px-7 py-3.5 text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-slate-800"
+                >
+                  Create workspace
+                </Link>
+                <Link
+                  href="/dashboard"
+                  className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-7 py-3.5 text-sm font-semibold text-slate-800 transition-colors hover:bg-slate-100"
+                >
+                  Open dashboard
+                </Link>
+              </div>
+            </div>
+
+            <aside className="va-fade-in-up-delay rounded-2xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-900/5">
+              <div className="mb-4 flex items-center justify-between border-b border-slate-100 pb-3">
+                <h2 className="text-sm font-bold uppercase tracking-[0.16em] text-slate-500">Pipeline preview</h2>
+                <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">Active</span>
+              </div>
+
+              <div className="space-y-4">
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Input</p>
+                  <p className="mt-1 text-sm font-medium text-slate-800">Repository URL and branch</p>
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Execution path</p>
+                  <p className="mt-1 text-sm leading-relaxed text-slate-700">
+                    ingestion.py → parser.py → analysis.py → knowledge_builder.py → query_service.py
+                  </p>
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Output</p>
+                  <p className="mt-1 text-sm font-medium text-slate-800">Grounded technical explanations with source-backed context</p>
+                </div>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <section className="border-b border-slate-200 bg-white py-20" id="workflow">
+          <div className="mx-auto w-full max-w-7xl px-6 lg:px-10">
+            <div className="mb-12 max-w-2xl">
+              <h2 className="font-headline text-4xl leading-tight text-slate-950">A workflow built for engineering teams</h2>
+              <p className="mt-4 text-lg text-slate-600">
+                Each stage is explicit and inspectable. No hidden mock responses, no synthetic output pipelines.
+              </p>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              {workflow.map((item) => (
+                <article key={item.step} className="rounded-2xl border border-slate-200 bg-slate-50 p-6">
+                  <p className="text-sm font-bold tracking-wide text-cyan-700">{item.step}</p>
+                  <h3 className="mt-2 text-xl font-semibold text-slate-900">{item.title}</h3>
+                  <p className="mt-3 text-sm leading-relaxed text-slate-600">{item.text}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="border-b border-slate-200 bg-slate-50 py-20">
+          <div className="mx-auto w-full max-w-7xl px-6 lg:px-10">
+            <div className="mb-12 flex flex-wrap items-end justify-between gap-6">
+              <div className="max-w-2xl">
+                <h2 className="font-headline text-4xl leading-tight text-slate-950">Real platform capabilities</h2>
+                <p className="mt-4 text-lg text-slate-600">
+                  These are directly mapped to the current backend modules powering analysis in this repository.
+                </p>
+              </div>
+              <Link href="/jobs" className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">
+                View jobs
+              </Link>
+            </div>
+
+            <div className="grid gap-5 md:grid-cols-2">
+              {platformCapabilities.map((capability) => (
+                <article key={capability.title} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                  <h3 className="text-xl font-semibold text-slate-900">{capability.title}</h3>
+                  <p className="mt-3 text-sm leading-relaxed text-slate-600">{capability.detail}</p>
+                  <p className="mt-4 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">{capability.file}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="bg-white py-20" id="security">
+          <div className="mx-auto w-full max-w-7xl px-6 lg:px-10">
+            <div className="grid gap-8 rounded-3xl border border-slate-200 bg-gradient-to-r from-cyan-50 via-white to-amber-50 p-8 lg:grid-cols-3 lg:p-10">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-700">Security and operations</p>
+                <h2 className="mt-4 font-headline text-4xl leading-tight text-slate-950">Built for controlled analysis</h2>
+              </div>
+              <article className="rounded-2xl border border-slate-200 bg-white p-5">
+                <h3 className="text-lg font-semibold text-slate-900">Read-only ingestion</h3>
+                <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                  Repository ingestion is designed for analysis only. The pipeline focuses on extracting structure and context, not modifying source.
+                </p>
+              </article>
+              <article className="rounded-2xl border border-slate-200 bg-white p-5">
+                <h3 className="text-lg font-semibold text-slate-900">Job-level traceability</h3>
+                <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                  Jobs, statuses, and progress are exposed through backend routes for clear operational visibility.
+                </p>
+              </article>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer className="border-t border-slate-200 bg-white">
+        <div className="mx-auto flex w-full max-w-7xl flex-col items-start justify-between gap-6 px-6 py-10 text-sm text-slate-500 md:flex-row md:items-center lg:px-10">
+          <p>VibeAnalytix</p>
+          <div className="flex gap-6">
+            <Link href="/sign-up" className="transition-colors hover:text-slate-900">Get started</Link>
+            <Link href="/dashboard" className="transition-colors hover:text-slate-900">Dashboard</Link>
+            <Link href="/settings" className="transition-colors hover:text-slate-900">Settings</Link>
+          </div>
+        </div>
+      </footer>
     </div>
   )
 }

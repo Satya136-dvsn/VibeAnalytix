@@ -22,7 +22,7 @@ from app.config import settings  # Kept for backwards-compatible test patching
 from app.knowledge_builder import KnowledgeGraph
 from app.schemas import ExplanationSet
 from app.embeddings import generate_embedding
-from app.vector_store import semantic_retrieval
+from app.vector_store import hybrid_retrieval
 
 logger = logging.getLogger(__name__)
 
@@ -131,7 +131,7 @@ class ExplanationEngine:
         top_k: int = 10,
     ) -> list[dict]:
         """
-        Retrieve top-k semantically similar function embeddings from pgvector.
+        Retrieve top-k relevant function summaries using hybrid retrieval.
 
         Generates a query embedding from the project context (project summary,
         key modules, entry points) and retrieves similar functions.
@@ -146,7 +146,6 @@ class ExplanationEngine:
             List of similar function summaries with their embeddings
         """
         from uuid import UUID
-        from app.vector_store import semantic_retrieval
 
         try:
             job_uuid = UUID(job_id)
@@ -182,23 +181,25 @@ class ExplanationEngine:
                 task_type="retrieval_query",
             )
 
-            # Use the real embedding for semantic retrieval
-            all_summaries = await semantic_retrieval(
+            # Use hybrid retrieval for stronger grounding.
+            all_candidates = await hybrid_retrieval(
                 session=session,
                 job_id=job_uuid,
+                query_text=query_text,
                 query_embedding=query_embedding,
                 top_k=top_k,
             )
 
             return [
                 {
-                    "file_path": s.file_path,
-                    "function_name": s.function_name,
-                    "line_start": s.line_start,
-                    "line_end": s.line_end,
-                    "summary_text": s.summary_text,
+                    "file_path": item["summary"].file_path,
+                    "function_name": item["summary"].function_name,
+                    "line_start": item["summary"].line_start,
+                    "line_end": item["summary"].line_end,
+                    "summary_text": item["summary"].summary_text,
+                    "score": item.get("score", 0.0),
                 }
-                for s in all_summaries
+                for item in all_candidates
             ]
         except Exception as e:
             logger.warning(f"Semantic retrieval failed: {e}")

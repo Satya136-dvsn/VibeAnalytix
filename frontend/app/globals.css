@@ -34,6 +34,74 @@ body {
   min-height: 100vh;
 }
 
+.va-landing {
+  background:
+    radial-gradient(circle at 15% 20%, rgba(34, 211, 238, 0.14), transparent 30%),
+    radial-gradient(circle at 85% 18%, rgba(251, 191, 36, 0.18), transparent 28%),
+    linear-gradient(180deg, #f8fafc 0%, #ffffff 45%, #f8fafc 100%);
+  position: relative;
+}
+
+.va-grid-overlay {
+  background-image:
+    linear-gradient(rgba(15, 23, 42, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 23, 42, 0.05) 1px, transparent 1px);
+  background-size: 44px 44px;
+  inset: 0;
+  opacity: 0.45;
+  pointer-events: none;
+  position: absolute;
+  z-index: 0;
+}
+
+.va-landing > * {
+  position: relative;
+  z-index: 1;
+}
+
+.va-orb {
+  filter: blur(26px);
+  pointer-events: none;
+  position: absolute;
+}
+
+.va-orb-one {
+  background: rgba(34, 211, 238, 0.22);
+  border-radius: 9999px;
+  height: 16rem;
+  left: -3rem;
+  top: 4rem;
+  width: 16rem;
+}
+
+.va-orb-two {
+  background: rgba(251, 191, 36, 0.2);
+  border-radius: 9999px;
+  height: 14rem;
+  right: -2rem;
+  top: 3rem;
+  width: 14rem;
+}
+
+.va-fade-in-up {
+  animation: va-fade-in-up 0.7s ease-out both;
+}
+
+.va-fade-in-up-delay {
+  animation: va-fade-in-up 0.9s ease-out 0.1s both;
+}
+
+@keyframes va-fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* ─── Material Symbols ───────────────────────────────────────────── */
 .material-symbols-outlined {
   font-family: 'Material Symbols Outlined';
