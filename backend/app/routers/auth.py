@@ -22,7 +22,6 @@ from app.schemas import (
     TokenResponse,
     UserResponse,
     ErrorResponse,
-    ErrorDetail,
 )
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])

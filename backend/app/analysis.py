@@ -8,9 +8,8 @@ Pass 3: Context Refinement - resolve cross-file semantic relationships
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
 
-from app.parser import FileTreeNode, ImportDef, ParsedFile
+from app.parser import ClassDef, FileTreeNode, FunctionDef, ParsedFile
 
 
 @dataclass
@@ -105,8 +104,6 @@ class AnalysisEngine:
         - Detect circular dependencies using DFS
         - Catalog external library dependencies
         """
-        # Build file map for quick lookup
-        file_map = {pf.path: pf for pf in parsed_files}
 
         # Initialize dependency graph
         dep_graph: dict[str, set[str]] = {pf.path: set() for pf in parsed_files}
@@ -250,7 +247,7 @@ class AnalysisEngine:
                                             relation_type="calls",
                                         )
                                     )
-                except Exception as e:
+                except Exception:
                     # Silently continue if AST analysis fails
                     pass
 

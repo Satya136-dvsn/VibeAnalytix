@@ -18,7 +18,6 @@ from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.analysis import AnalysisResult
-from app.config import settings
 from app.embeddings import generate_embedding
 from app.llm_provider import LLMProviderService
 from app.parser import ParsedFile, FunctionDef

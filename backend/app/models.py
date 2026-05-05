@@ -3,20 +3,18 @@ SQLAlchemy ORM models for all database tables.
 """
 
 from datetime import datetime
-from typing import Literal, Optional
+from typing import Optional
 from uuid import UUID, uuid4
 
 from sqlalchemy import (
     CheckConstraint,
     Column,
-    DateTime,
     ForeignKey,
     Index,
     Integer,
     String,
     Text,
     TIMESTAMP,
-    UUID as SQLALCHEMY_UUID,
     func,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID as PG_UUID
@@ -184,6 +182,10 @@ class ProjectResult(Base):
     external_deps: Optional[JSONB] = Column(JSONB, nullable=True)
     file_tree: Optional[JSONB] = Column(JSONB, nullable=True)
     per_file_explanations: Optional[JSONB] = Column(JSONB, nullable=True)
+    architecture_diagrams: Optional[JSONB] = Column(JSONB, nullable=True)
+    # {"dependency": "...", "module": "...", "class_diagram": "...", "flow": "..."}
+    repo_metadata: Optional[JSONB] = Column(JSONB, nullable=True)
+    # {"name": "...", "description": "...", "stars": N, "language": "...", "topics": [...]}
 
     # Relationships
     job = relationship("Job", back_populates="project_results")

@@ -2,11 +2,8 @@
 Jobs router for job submission, status tracking, and results retrieval.
 """
 
-import asyncio
 import json
-import tempfile
 from uuid import UUID
-from datetime import datetime, timedelta
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,7 +12,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File,
 from app.auth import get_current_user
 from app.config import settings
 from app.database import get_session
-from app.models import User, Job, ProjectResult, FileSummary
+from app.models import User, Job, ProjectResult
 from app.provider_health import get_provider_readiness_report
 from app.rate_limiter import enforce_sliding_window_limit, RateLimitError
 from app.redis_store import get_redis
@@ -29,7 +26,6 @@ from app.schemas import (
     ChatResponse,
 )
 from app.tasks import run_pipeline
-from app.celery_app import celery_app
 
 router = APIRouter(prefix="/api/v1/jobs", tags=["jobs"])
 
@@ -401,6 +397,8 @@ async def get_job_results(
             circular_deps=project_result.circular_deps,
             external_deps=project_result.external_deps,
             file_tree=project_result.file_tree,
+            architecture_diagrams=project_result.architecture_diagrams,
+            repo_metadata=project_result.repo_metadata,
         )
 
     return JobResultsResponse(

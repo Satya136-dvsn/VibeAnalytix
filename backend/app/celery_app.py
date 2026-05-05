@@ -3,7 +3,6 @@ Celery app configuration and task definitions for async pipeline.
 """
 
 from celery import Celery
-from celery.schedules import schedule
 
 from app.config import settings
 

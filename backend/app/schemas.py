@@ -78,6 +78,8 @@ class ExplanationSet(BaseModel):
     circular_deps: Optional[list[list[str]]] = None
     external_deps: Optional[list[str]] = None
     file_tree: Optional[dict] = None
+    architecture_diagrams: Optional[dict[str, str]] = None
+    repo_metadata: Optional[dict] = None
 
 
 class JobResultsResponse(BaseModel):

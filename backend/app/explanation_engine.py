@@ -18,7 +18,6 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.llm_provider import LLMProviderService
-from app.config import settings  # Kept for backwards-compatible test patching
 from app.knowledge_builder import KnowledgeGraph
 from app.schemas import ExplanationSet
 from app.embeddings import generate_embedding

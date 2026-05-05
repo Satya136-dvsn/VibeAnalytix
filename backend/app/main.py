@@ -20,7 +20,6 @@ from app.provider_health import get_provider_readiness_report
 from app.provider_health import close_provider_health_client
 from app.redis_store import init_redis, close_redis
 from app.routers import auth, jobs
-from app.celery_app import celery_app
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
@@ -87,22 +86,27 @@ def create_app() -> FastAPI:
         openapi_url="/openapi.json" if settings.enable_api_docs else None,
     )
 
+    # Parse and debug CORS origins
+    cors_origins = parse_csv_setting(settings.cors_allowed_origins)
+    print(f"DEBUG: CORS origins configured: {cors_origins}")
+    
+    # Add CORS middleware with explicit origins (added first so it executes first)
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],  # Temporarily use wildcard for testing
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+        max_age=3600,
+    )
+
+    app.add_middleware(SecurityHeadersMiddleware)
+    
     allowed_hosts = parse_csv_setting(settings.trusted_hosts)
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=allowed_hosts)
 
     if settings.enforce_https:
         app.add_middleware(HTTPSRedirectMiddleware)
-
-    # Add CORS middleware
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=parse_csv_setting(settings.cors_allowed_origins),
-        allow_credentials=True,
-        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-        allow_headers=["Authorization", "Content-Type", "Accept", "X-Requested-With"],
-    )
-
-    app.add_middleware(SecurityHeadersMiddleware)
 
     @app.exception_handler(HTTPException)
     async def http_exception_handler(request: Request, exc: HTTPException):

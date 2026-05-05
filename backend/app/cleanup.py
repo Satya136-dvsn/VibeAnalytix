@@ -5,7 +5,6 @@ Cleanup Service for deleting temporary files and managing job lifecycle.
 import shutil
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Optional
 
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession

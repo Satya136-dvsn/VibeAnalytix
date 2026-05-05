@@ -149,8 +149,8 @@ export default function SubmissionPage() {
 
       {/* ── Main Content ───────────────────────────────────────── */}
       <main className="flex-grow flex flex-col min-h-screen relative overflow-hidden lg:ml-64">
-        {/* Background Ambient Glows */}
-        <div className="absolute top-[-10%] right-[-5%] w-[400px] h-[400px] bg-primary/10 rounded-full blur-[120px] pointer-events-none"></div>
+        {/* Background Ambient Glow */}
+        <div className="absolute top-[-10%] right-[-5%] w-[400px] h-[400px] bg-primary/5 rounded-full blur-[120px] pointer-events-none"></div>
 
         {/* ── Header ───────────────────────────────────────────── */}
         <header className="h-16 flex justify-between items-center px-8 w-full sticky top-0 z-50 glass-panel border-b border-outline-variant/10">
@@ -299,7 +299,7 @@ export default function SubmissionPage() {
                     onClick={() => job.status === 'completed' && router.push(`/jobs/${job.id}`)}
                     className="card p-4 flex items-center gap-6 hover:bg-surface-container-high transition-all cursor-pointer group"
                   >
-                    <div className="w-12 h-12 rounded-xl bg-slate-900 border border-outline-variant/10 flex items-center justify-center text-on-surface-variant group-hover:text-primary transition-colors">
+                    <div className="w-12 h-12 rounded-xl bg-surface-container border border-outline-variant/20 flex items-center justify-center text-on-surface-variant group-hover:text-primary transition-colors">
                       <span className="material-symbols-outlined">{job.status === 'completed' ? 'terminal' : 'account_tree'}</span>
                     </div>
                     <div className="flex-1">
@@ -368,14 +368,14 @@ export default function SubmissionPage() {
         </div>
         
         {/* ── Footer ───────────────────────────────────────────── */}
-        <footer className="w-full bg-slate-950 border-t border-outline-variant/10 flex flex-col md:flex-row justify-between items-center px-12 py-6 mt-auto shrink-0 z-10">
+        <footer className="w-full bg-surface-container-low border-t border-outline-variant/20 flex flex-col md:flex-row justify-between items-center px-12 py-6 mt-auto shrink-0 z-10">
           <div className="mb-4 md:mb-0">
-            <span className="text-lg font-headline italic text-slate-100">VibeAnalytix</span>
-            <p className="text-[10px] uppercase tracking-[0.25em] text-slate-500 mt-1">© 2024 VibeAnalytix. Neural Precision Engineering.</p>
+            <span className="text-lg font-headline italic text-on-surface">VibeAnalytix</span>
+            <p className="text-[10px] uppercase tracking-[0.25em] text-on-surface-variant mt-1">© 2024 VibeAnalytix. Neural Precision Engineering.</p>
           </div>
           <div className="flex gap-6">
-            <a href="#" className="text-[10px] uppercase tracking-widest text-slate-500 hover:text-primary transition-colors">Security Architecture</a>
-            <a href="#" className="text-[10px] uppercase tracking-widest text-slate-500 hover:text-primary transition-colors">Terminal Details</a>
+            <a href="#" className="text-[10px] uppercase tracking-widest text-on-surface-variant hover:text-primary transition-colors">Security Architecture</a>
+            <a href="#" className="text-[10px] uppercase tracking-widest text-on-surface-variant hover:text-primary transition-colors">Terminal Details</a>
           </div>
         </footer>
       </main>

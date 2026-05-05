@@ -6,11 +6,9 @@ ingestion → parsing → analysis → knowledge_building → embedding → expl
 """
 
 import traceback
-from pathlib import Path
 from uuid import UUID
 
-from sqlalchemy import select, update
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import update
 
 from app.celery_app import celery_app
 from app.database import async_session_maker
@@ -23,6 +21,7 @@ from app.knowledge_builder import (
     generate_and_store_embeddings,
 )
 from app.explanation_engine import generate_explanations
+from app.diagram_generator import generate_all_diagrams
 from app.cleanup import (
     cleanup_on_completion,
     update_job_progress,
@@ -181,12 +180,48 @@ async def _run_pipeline_async(
             session.add(project_result)
             await session.commit()
 
-            await update_job_progress(job_id, "explanation", 95, session)
+            await update_job_progress(job_id, "explanation", 90, session)
 
         except Exception as e:
             print(f"Error generating explanations: {e}")
             # Don't fail the job on explanation errors
-            await update_job_progress(job_id, "explanation", 95, session)
+            await update_job_progress(job_id, "explanation", 90, session)
+
+        # ============ Stage 6.5: Architecture Diagram Generation ============
+        await update_job_progress(job_id, "diagram_generation", 92, session)
+
+        try:
+            diagrams = generate_all_diagrams(parsed_files, analysis, knowledge)
+
+            # Also fetch optional GitHub repo metadata (no API key required)
+            repo_metadata = None
+            if source_type == "github":
+                try:
+                    from app.github_metadata import fetch_repo_metadata
+                    meta = await fetch_repo_metadata(source_ref)
+                    repo_metadata = meta.to_dict() if meta else None
+                except Exception as meta_err:
+                    print(f"[PIPELINE] GitHub metadata fetch skipped: {meta_err}")
+
+            # Update project_result with diagrams and metadata
+            from app.models import ProjectResult
+            from sqlalchemy import select
+
+            pr_stmt = select(ProjectResult).where(ProjectResult.job_id == UUID(job_id))
+            pr_row = await session.execute(pr_stmt)
+            project_result_existing = pr_row.scalar_one_or_none()
+
+            if project_result_existing:
+                project_result_existing.architecture_diagrams = diagrams
+                if repo_metadata:
+                    project_result_existing.repo_metadata = repo_metadata
+                await session.commit()
+
+            await update_job_progress(job_id, "diagram_generation", 95, session)
+
+        except Exception as e:
+            print(f"[PIPELINE] Diagram generation error (non-fatal): {e}")
+            await update_job_progress(job_id, "diagram_generation", 95, session)
 
         # ============ Stage 7: Cleanup ============
         await update_job_progress(job_id, "cleanup", 98, session)

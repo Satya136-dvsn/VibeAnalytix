@@ -10,7 +10,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
-import tree_sitter
 from tree_sitter import Language, Node, Parser
 
 

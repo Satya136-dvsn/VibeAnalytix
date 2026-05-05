@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     debug: bool = False
     enable_api_docs: bool = True
     enforce_https: bool = False
-    cors_allowed_origins: str = "http://localhost:3000"
+    cors_allowed_origins: str = "http://localhost:3000,http://localhost:3001"
     trusted_hosts: str = "localhost,127.0.0.1"
     trusted_proxy_ips: str = "127.0.0.1,::1"
 

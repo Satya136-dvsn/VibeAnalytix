@@ -6,6 +6,8 @@ import { useRouter, useParams } from 'next/navigation'
 import { useAppStore } from '@/lib/store'
 import { ArrowLeft, RefreshCw, AlertCircle, ChevronRight, ChevronDown, LogOut } from 'lucide-react'
 import MarkdownRenderer from '@/components/MarkdownRenderer'
+import DiagramViewer from '@/components/DiagramViewer'
+import { apiClient } from '@/lib/api'
 
 // Build a tree from a flat list of file paths.
 // Handles both / and \ separators and strips any leading temp/absolute prefix.
@@ -109,7 +111,7 @@ export default function JobResultsPage() {
   const jobId = params.id as string
 
   const { isAuthenticated, isLoading, user, pollJobStatus, getJobResults, retryJob, logout } = useAppStore()
-  const [tab, setTab] = useState<'overview' | 'structure' | 'flow'>('overview')
+  const [tab, setTab] = useState<'overview' | 'structure' | 'flow' | 'diagrams'>('overview')
   const [status, setStatus] = useState<any>(null)
   const [results, setResults] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -199,7 +201,6 @@ export default function JobResultsPage() {
     setChatLoading(true)
 
     try {
-      const { apiClient } = await import('@/lib/api')
       const res = await apiClient.chatWithRepo(jobId, query)
       setChatHistory(prev => [...prev, { role: 'assistant', content: res.answer, sources: res.sources }])
     } catch (err: any) {
@@ -333,6 +334,14 @@ export default function JobResultsPage() {
               <button onClick={() => setTab('overview')} className={tab === 'overview' ? 'tab-btn-active' : 'tab-btn'}>Overview</button>
               <button onClick={() => setTab('structure')} className={tab === 'structure' ? 'tab-btn-active' : 'tab-btn'}>Structure</button>
               <button onClick={() => setTab('flow')} className={tab === 'flow' ? 'tab-btn-active' : 'tab-btn'}>Flow</button>
+              {results?.explanations?.architecture_diagrams && (
+                <button onClick={() => setTab('diagrams')} className={tab === 'diagrams' ? 'tab-btn-active' : 'tab-btn'}>
+                  <span className="flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[16px]">architecture</span>
+                    Diagrams
+                  </span>
+                </button>
+              )}
             </div>
           )}
         </header>
@@ -476,6 +485,35 @@ export default function JobResultsPage() {
                   )}
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* DIAGRAMS TAB ──────────────────────────────────────────── */}
+          {status?.status === 'completed' && results?.explanations?.architecture_diagrams && tab === 'diagrams' && (
+            <div className="max-w-6xl mx-auto">
+              {results.explanations.repo_metadata && (
+                <div className="mb-6 card p-4 bg-surface-container-low border-outline-variant/10 flex flex-wrap gap-4 items-center">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-primary text-[18px]">hub</span>
+                    <span className="font-semibold text-on-surface">{results.explanations.repo_metadata.name}</span>
+                  </div>
+                  {results.explanations.repo_metadata.description && (
+                    <span className="text-sm text-on-surface-variant flex-1">{results.explanations.repo_metadata.description}</span>
+                  )}
+                  {typeof results.explanations.repo_metadata.stars === 'number' && (
+                    <span className="chip text-[11px] flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[14px] text-tertiary">star</span>
+                      {results.explanations.repo_metadata.stars.toLocaleString()}
+                    </span>
+                  )}
+                  {results.explanations.repo_metadata.language && (
+                    <span className="chip text-[11px] bg-primary/10 border-primary/20 text-primary">
+                      {results.explanations.repo_metadata.language}
+                    </span>
+                  )}
+                </div>
+              )}
+              <DiagramViewer diagrams={results.explanations.architecture_diagrams} />
             </div>
           )}
           

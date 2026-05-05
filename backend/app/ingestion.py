@@ -311,7 +311,7 @@ async def ingest_github(job_id: str, url: str) -> IngestionResult:
             source_type="github",
             repo_size_bytes=repo_size,
         )
-    except Exception as e:
+    except Exception:
         # Clean up on error
         shutil.rmtree(temp_base, ignore_errors=True)
         raise
@@ -352,7 +352,7 @@ async def ingest_zip(job_id: str, file_bytes: bytes) -> IngestionResult:
             source_type="zip",
             repo_size_bytes=repo_size,
         )
-    except Exception as e:
+    except Exception:
         # Clean up on error
         shutil.rmtree(temp_base, ignore_errors=True)
         raise
